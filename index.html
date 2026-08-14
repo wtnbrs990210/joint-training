@@ -77,6 +77,12 @@
 
     <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
+      
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">📝 募集メッセージ（任意）</div>
+        <textarea id="post-description" class="input-field" placeholder="「脚トレ追い込み合える方募集！」「合トレ初心者ですがお願いします！」など" style="min-height: 60px;"></textarea>
+      </div>
+
       <!-- 日程の複数選択 -->
       <div style="margin-bottom: 30px;">
         <div class="section-title">📅 希望日（複数追加できます）</div>
@@ -87,12 +93,37 @@
         <div id="selected-dates-container"></div>
       </div>
 
+      <!-- ジムの複数選択（プルダウンから） -->
       <div style="margin-bottom: 30px;">
-        <div class="section-title">📍 開催ジム（複数選択可）</div>
-        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">エニタイムフィットネス</div>
-        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">Gold's Gym</div>
-        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">港区スポーツセンター</div>
-        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">その他公営ジム</div>
+        <div class="section-title">📍 開催ジム（複数追加できます）</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <select id="post-gym-input" class="input-field" style="margin: 0;">
+            <option value="">選択してください</option>
+            <option value="エニタイムフィットネス">エニタイムフィットネス</option>
+            <option value="FASTGYM24">FASTGYM24</option>
+            <option value="JOYFIT24">JOYFIT24</option>
+            <option value="FiT24">FiT24</option>
+            <option value="FIT PLACE24">FIT PLACE24</option>
+            <option value="FIT365">FIT365</option>
+            <option value="chocoZAP">chocoZAP</option>
+            <option value="LIFE FIT">LIFE FIT</option>
+            <option value="スポーツクラブルネサンス">スポーツクラブルネサンス</option>
+            <option value="コナミスポーツクラブ">コナミスポーツクラブ</option>
+            <option value="セントラルスポーツ">セントラルスポーツ</option>
+            <option value="ティップネス">ティップネス</option>
+            <option value="メガロス">メガロス</option>
+            <option value="ジェクサー">ジェクサー</option>
+            <option value="スポーツクラブNAS">スポーツクラブNAS</option>
+            <option value="Gold's Gym">Gold's Gym</option>
+            <option value="カーブス">カーブス</option>
+            <option value="Bodies">Bodies</option>
+            <option value="FURDI">FURDI</option>
+            <option value="公営ジムメイン">公営ジムメイン</option>
+            <option value="その他">その他</option>
+          </select>
+          <button class="btn-secondary" style="margin: 0; width: 80px;" onclick="addPostGym()">追加</button>
+        </div>
+        <div id="selected-gyms-container"></div>
       </div>
       
       <div style="margin-bottom: 30px;">
@@ -111,16 +142,17 @@
     <!-- 3. フレンド＆メッセージ一覧画面 -->
     <div id="screen-friends" class="screen">
       <div class="section-title">IDでフレンド追加</div>
+      <p style="font-size: 11px; color: #888; margin-top: -5px; line-height: 1.4;">※タイムラインからのフレンド追加は「合トレ完了報告」後のみ可能です。<br>事前に連絡を取りたい場合はIDを検索してください。</p>
       <div style="display: flex; gap: 10px; margin-bottom: 30px;">
         <input type="text" id="search-uid" class="input-field" placeholder="相手のIDを入力" style="margin: 0;">
         <button class="btn-secondary" style="margin: 0; width: 100px;" onclick="searchAndAddFriend()">追加</button>
       </div>
 
       <div class="section-title">フレンド一覧（タップしてチャット）</div>
-      <div id="friends-container"><p style="color: #888; font-size: 13px;">まだフレンドがいません。募集から追加するか、IDを検索してください。</p></div>
+      <div id="friends-container"><p style="color: #888; font-size: 13px;">まだフレンドがいません。</p></div>
     </div>
 
-    <!-- 3-5. 個別チャット画面（タブバー非表示） -->
+    <!-- 3-5. 個別チャット画面 -->
     <div id="screen-chat" class="screen">
       <div id="chat-messages" style="display: flex; flex-direction: column; padding-bottom: 20px;"></div>
       <div class="chat-input-area">
@@ -146,6 +178,9 @@
       <div class="section-title">表示名</div>
       <input type="text" id="profile-name" class="input-field" placeholder="名前を入力">
       
+      <div class="section-title">自己紹介</div>
+      <textarea id="profile-bio" class="input-field" placeholder="得意な種目や普段のトレーニング内容などを入力"></textarea>
+      
       <div class="section-title">筋トレ歴</div>
       <select id="profile-history" class="input-field">
         <option value="">選択してください</option>
@@ -154,6 +189,32 @@
         <option value="3〜5年">3〜5年</option>
         <option value="5〜10年">5〜10年</option>
         <option value="10年以上">10年以上</option>
+      </select>
+
+      <div class="section-title">メインの契約ジム</div>
+      <select id="profile-gyms" class="input-field">
+        <option value="">選択してください</option>
+        <option value="エニタイムフィットネス">エニタイムフィットネス</option>
+        <option value="FASTGYM24">FASTGYM24</option>
+        <option value="JOYFIT24">JOYFIT24</option>
+        <option value="FiT24">FiT24</option>
+        <option value="FIT PLACE24">FIT PLACE24</option>
+        <option value="FIT365">FIT365</option>
+        <option value="chocoZAP">chocoZAP</option>
+        <option value="LIFE FIT">LIFE FIT</option>
+        <option value="スポーツクラブルネサンス">スポーツクラブルネサンス</option>
+        <option value="コナミスポーツクラブ">コナミスポーツクラブ</option>
+        <option value="セントラルスポーツ">セントラルスポーツ</option>
+        <option value="ティップネス">ティップネス</option>
+        <option value="メガロス">メガロス</option>
+        <option value="ジェクサー">ジェクサー</option>
+        <option value="スポーツクラブNAS">スポーツクラブNAS</option>
+        <option value="Gold's Gym">Gold's Gym</option>
+        <option value="カーブス">カーブス</option>
+        <option value="Bodies">Bodies</option>
+        <option value="FURDI">FURDI</option>
+        <option value="公営ジムメイン">公営ジムメイン</option>
+        <option value="その他">その他</option>
       </select>
 
       <button class="btn-primary" onclick="saveProfile()">プロフィールを保存する</button>
@@ -181,9 +242,9 @@
       <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
       募集
     </div>
-    <div class="tab-item" onclick="switchTab('screen-friends', 'フレンド・メッセージ')">
+    <div class="tab-item" onclick="switchTab('screen-friends', 'フレンド')">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      メッセージ
+      チャット
     </div>
     <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')">
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -192,7 +253,7 @@
   </div>
 
   <script>
-    // ▼▼▼ APIキーを上書きしてください ▼▼▼
+    // ▼▼▼ オーナー様のAPIキーを上書きしてください ▼▼▼
     const firebaseConfig = {
       apiKey: "AIzaSyA43zyt2XOK6-Pqwd0AAQcMYIcIqGpUsW4",
       authDomain: "joint-training.firebaseapp.com",
@@ -214,7 +275,6 @@
       document.getElementById(screenId).classList.add('active');
       document.getElementById('app-header').innerText = headerTitle;
       
-      // チャット画面の時は下部タブを隠す
       const tabs = document.getElementById('bottom-tabs');
       if(screenId === 'screen-chat' || screenId === 'screen-login') {
         tabs.style.display = 'none';
@@ -235,7 +295,7 @@
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById('bottom-tabs').style.display = 'flex';
-        document.getElementById('my-uid-display').innerText = user.uid; // 自分のIDを表示
+        document.getElementById('my-uid-display').innerText = user.uid;
         switchTab('screen-search', 'JOINT TRAINING');
         loadPosts();
         loadProfile(user.uid);
@@ -262,7 +322,7 @@
           canvas.width = w; canvas.height = h;
           ctx.drawImage(img, 0, 0, w, h);
           currentProfileImage = canvas.toDataURL('image/jpeg', 0.8);
-          document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">`;
+          document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto; width: 80px; height: 80px;">`;
         };
         img.src = e.target.result;
       };
@@ -274,10 +334,12 @@
         if (doc.exists) {
           const data = doc.data();
           document.getElementById('profile-name').value = data.name || auth.currentUser.displayName;
+          document.getElementById('profile-bio').value = data.bio || "";
           document.getElementById('profile-history').value = data.history || "";
+          document.getElementById('profile-gyms').value = data.gyms || "";
           if (data.photoURL) {
             currentProfileImage = data.photoURL;
-            document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">`;
+            document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto; width: 80px; height: 80px;">`;
           }
         }
       });
@@ -287,15 +349,19 @@
       const uid = auth.currentUser.uid;
       db.collection("users").doc(uid).set({
         name: document.getElementById('profile-name').value,
+        bio: document.getElementById('profile-bio').value,
         history: document.getElementById('profile-history').value,
+        gyms: document.getElementById('profile-gyms').value,
         photoURL: currentProfileImage,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => alert("保存しました！"));
     }
 
-    // === 募集機能（日程複数選択対応） ===
+    // === 募集機能（日程・ジム 複数追加） ===
     let selectedDates = [];
+    let selectedPostGyms = [];
     
+    // 日程追加
     function addDate() {
       const dateVal = document.getElementById('post-date-input').value;
       if(dateVal && !selectedDates.includes(dateVal)) {
@@ -303,28 +369,42 @@
         renderDates();
       }
     }
-    
     function renderDates() {
-      const container = document.getElementById('selected-dates-container');
-      container.innerHTML = selectedDates.map(d => `<div class="part-btn selected" onclick="removeDate('${d}')">${d} ✕</div>`).join('');
+      document.getElementById('selected-dates-container').innerHTML = selectedDates.map(d => `<div class="part-btn selected" onclick="removeDate('${d}')">${d} ✕</div>`).join('');
     }
-    
     function removeDate(d) {
       selectedDates = selectedDates.filter(x => x !== d);
       renderDates();
     }
 
-    function openConfirmModal() {
-      const gyms = Array.from(document.querySelectorAll('.gym-btn.selected')).map(el => el.innerText);
-      const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
+    // ジム追加
+    function addPostGym() {
+      const gymVal = document.getElementById('post-gym-input').value;
+      if(gymVal && !selectedPostGyms.includes(gymVal)) {
+        selectedPostGyms.push(gymVal);
+        renderPostGyms();
+      }
+    }
+    function renderPostGyms() {
+      document.getElementById('selected-gyms-container').innerHTML = selectedPostGyms.map(g => `<div class="part-btn selected" onclick="removePostGym('${g}')">${g} ✕</div>`).join('');
+    }
+    function removePostGym(g) {
+      selectedPostGyms = selectedPostGyms.filter(x => x !== g);
+      renderPostGyms();
+    }
 
-      if (gyms.length === 0 || parts.length === 0 || selectedDates.length === 0) {
+    function openConfirmModal() {
+      const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
+      const desc = document.getElementById('post-description').value;
+
+      if (selectedPostGyms.length === 0 || parts.length === 0 || selectedDates.length === 0) {
         return alert("希望日・ジム・部位をそれぞれ1つ以上選択してください。");
       }
 
       document.getElementById('confirm-content').innerHTML = `
+        <strong>📝 メッセージ:</strong><br>${desc ? desc : 'なし'}<br><br>
         <strong>📅 日程:</strong><br>${selectedDates.join(', ')}<br><br>
-        <strong>📍 場所:</strong><br>${gyms.join(', ')}<br><br>
+        <strong>📍 場所:</strong><br>${selectedPostGyms.join(', ')}<br><br>
         <strong>💪 部位:</strong><br>${parts.join(', ')}
       `;
       document.getElementById('confirm-modal').style.display = 'flex';
@@ -334,31 +414,38 @@
 
     function submitPost() {
       const user = auth.currentUser;
-      const gyms = Array.from(document.querySelectorAll('.gym-btn.selected')).map(el => el.innerText);
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
+      const desc = document.getElementById('post-description').value;
 
       db.collection("users").doc(user.uid).get().then(doc => {
         const hostName = doc.exists && doc.data().name ? doc.data().name : user.displayName;
         const photoURL = doc.exists ? doc.data().photoURL : null;
+        const bio = doc.exists ? doc.data().bio : "";
         
         db.collection("posts").add({
           uid: user.uid,
           hostName: hostName,
           hostPhoto: photoURL,
-          dates: selectedDates, // 複数日程を保存
-          gyms: gyms,
+          hostBio: bio,
+          description: desc,
+          dates: selectedDates,
+          gyms: selectedPostGyms,
           parts: parts,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
           closeConfirmModal();
-          alert("募集を確定しました！");
-          selectedDates = []; renderDates(); // リセット
+          alert("募集を公開しました！");
+          // 入力リセット
+          selectedDates = []; renderDates();
+          selectedPostGyms = []; renderPostGyms();
+          document.getElementById('post-description').value = "";
           document.querySelectorAll('#screen-post .selected').forEach(el => el.classList.remove('selected'));
           switchTab('screen-search', 'JOINT TRAINING');
         });
       });
     }
 
+    // === タイムライン表示 ===
     function loadPosts() {
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
         const container = document.getElementById('posts-container');
@@ -367,25 +454,39 @@
         
         snap.forEach(doc => {
           const post = doc.data();
-          const datesText = post.dates ? post.dates.join(" / ") : "";
-          const gymsText = post.gyms ? post.gyms.join(" / ") : "";
+          const datesText = post.dates ? post.dates.join(", ") : "";
+          const gymsText = post.gyms ? post.gyms.join(", ") : "";
           const partsText = post.parts ? post.parts.join("・") : "";
-          const avatarHtml = post.hostPhoto ? `<img src="${post.hostPhoto}" class="avatar-small">` : `<div class="avatar-small">${post.hostName.charAt(0)}</div>`;
           
-          // 自分以外の募集には「フレンド申請」ボタンを表示
+          // 写真を目立たせるレイアウト
+          const avatarHtml = post.hostPhoto 
+            ? `<img src="${post.hostPhoto}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #555; margin-right: 15px;">` 
+            : `<div style="width: 50px; height: 50px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; font-size: 20px;">${post.hostName.charAt(0)}</div>`;
+          
+          // 募集メッセージと自己紹介
+          const descHtml = post.description ? `<div style="background: #222; padding: 12px; border-radius: 8px; font-size: 13px; margin: 15px 0; line-height: 1.5;">${post.description}</div>` : '';
+          const bioHtml = post.hostBio ? `<div style="color: #aaa; font-size: 11px; margin-top: 4px; line-height: 1.3;">${post.hostBio}</div>` : '';
+
+          // 自分の投稿か、他人の投稿かでボタンを変える
           let actionBtn = post.uid === auth.currentUser.uid 
-            ? `<div style="text-align:right; color:#888; font-size:12px; margin-top:10px;">自分の募集</div>`
-            : `<button class="btn-primary" style="padding: 10px; margin-top: 15px; font-size:13px;" onclick="addFriend('${post.uid}')">🤝 フレンド申請</button>`;
+            ? `<div style="text-align:right; color:#888; font-size:12px; margin-top:15px;">自分の募集</div>`
+            : `<button class="btn-secondary" style="border-color: #fff; padding: 12px; margin-top: 15px; font-size:13px;" onclick="reportCompletion('${post.uid}', '${post.hostName}')">✅ 合トレ完了を報告してフレンド追加</button>`;
 
           container.innerHTML += `
             <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-              <div style="display: flex; align-items: center; margin-bottom: 10px;">
+              <div style="display: flex; align-items: center;">
                 ${avatarHtml}
-                <h3 style="margin: 0; font-size: 16px;">${post.hostName}</h3>
+                <div style="flex: 1;">
+                  <h3 style="margin: 0; font-size: 16px;">${post.hostName}</h3>
+                  ${bioHtml}
+                </div>
               </div>
-              <p style="color: #ccc; font-size: 14px; margin: 0; line-height: 1.6;">
-                📅 ${datesText}<br>📍 ${gymsText}<br>💪 ${partsText}
-              </p>
+              ${descHtml}
+              <div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;">
+                <div style="display:flex; margin-bottom: 4px;"><span style="width:25px;">📅</span> <span style="flex:1;">${datesText}</span></div>
+                <div style="display:flex; margin-bottom: 4px;"><span style="width:25px;">📍</span> <span style="flex:1;">${gymsText}</span></div>
+                <div style="display:flex;"><span style="width:25px;">💪</span> <span style="flex:1;">${partsText}</span></div>
+              </div>
               ${actionBtn}
             </div>
           `;
@@ -393,7 +494,13 @@
       });
     }
 
-    // === フレンド・メッセージ機能 ===
+    // === 合トレ完了報告 ＆ フレンド機能 ===
+    function reportCompletion(targetUid, targetName) {
+      if(confirm(`${targetName}さんとの合トレ完了を報告しますか？\n\n※完了報告を行うと、相手がフレンドに追加され、メッセージ機能が解放されます。`)) {
+        addFriend(targetUid);
+      }
+    }
+
     function searchAndAddFriend() {
       const targetUid = document.getElementById('search-uid').value.trim();
       addFriend(targetUid);
@@ -404,11 +511,10 @@
       if(!targetUid) return alert("IDが入力されていません");
       if(myUid === targetUid) return alert("自分自身は追加できません");
 
-      // お互いのドキュメントの friends 配列にIDを追加する
       db.collection("users").doc(myUid).set({ friends: firebase.firestore.FieldValue.arrayUnion(targetUid) }, {merge:true});
       db.collection("users").doc(targetUid).set({ friends: firebase.firestore.FieldValue.arrayUnion(myUid) }, {merge:true});
       
-      alert("フレンドに追加しました！メッセージ一覧からチャットが可能です。");
+      alert("フレンドに追加しました！チャット画面からメッセージが可能です。");
       document.getElementById('search-uid').value = "";
     }
 
@@ -428,7 +534,9 @@
           db.collection("users").doc(fUid).get().then(fDoc => {
             const fData = fDoc.data() || {};
             const name = fData.name || "名称未設定";
-            const avatarHtml = fData.photoURL ? `<img src="${fData.photoURL}" class="avatar-small">` : `<div class="avatar-small">${name.charAt(0)}</div>`;
+            const avatarHtml = fData.photoURL 
+              ? `<img src="${fData.photoURL}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #555; margin-right: 15px;">` 
+              : `<div class="avatar-small" style="width: 45px; height: 45px;">${name.charAt(0)}</div>`;
             
             container.innerHTML += `
               <div class="list-item" onclick="openChat('${fUid}', '${name}')">
@@ -446,11 +554,9 @@
     let chatUnsubscribe = null;
 
     function openChat(friendUid, friendName) {
-      // 1対1のユニークなチャットルームIDを生成（UIDをアルファベット順に繋ぐ）
       currentChatId = [auth.currentUser.uid, friendUid].sort().join('_');
       switchTab('screen-chat', friendName);
       
-      // 過去のメッセージ読み込み＆リアルタイム更新
       if(chatUnsubscribe) chatUnsubscribe();
       chatUnsubscribe = db.collection("chats").doc(currentChatId).collection("messages")
         .orderBy("createdAt", "asc")
@@ -469,14 +575,14 @@
               </div>
             `;
           });
-          window.scrollTo(0, document.body.scrollHeight); // 一番下へスクロール
+          window.scrollTo(0, document.body.scrollHeight);
         });
     }
 
     function closeChat() {
       if(chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
       currentChatId = null;
-      switchTab('screen-friends', 'フレンド・メッセージ');
+      switchTab('screen-friends', 'フレンド');
     }
 
     function sendMessage() {
@@ -489,7 +595,7 @@
         text: text,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        document.getElementById('chat-text').value = ""; // 入力欄をクリア
+        document.getElementById('chat-text').value = "";
       });
     }
   </script>
