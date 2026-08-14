@@ -10,7 +10,7 @@
 
   <style>
     /* 基本デザイン */
-    body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
+    body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
     header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 18px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
     .container { max-width: 480px; margin: 0 auto; padding: 20px; }
     
@@ -25,29 +25,32 @@
     .input-field { width: 100%; background-color: #1a1a1a; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; box-sizing: border-box; }
     textarea.input-field { resize: vertical; min-height: 80px; }
 
-    /* モーダル（確認画面） */
+    /* モーダル */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
     .modal-content { background-color: #161616; border: 1px solid #333; padding: 20px; border-radius: 12px; width: 80%; max-width: 350px; }
 
-    /* リストアイテム（フレンドなど） */
+    /* フレンドリスト・アイコン */
     .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
-    .avatar { width: 40px; height: 40px; background-color: #333; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #333; }
+    .avatar-small { width: 40px; height: 40px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; object-fit: cover; }
 
-/* 下部タブバー（少し上に浮かせたフローティングデザイン） */
+    /* チャット画面用 */
+    .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; margin-bottom: 10px; font-size: 14px; line-height: 1.5; display: inline-block; word-wrap: break-word; }
+    .chat-me { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
+    .chat-friend { background-color: #333333; color: #ffffff; border-bottom-left-radius: 4px; }
+    .chat-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; padding: 15px; box-sizing: border-box; border-top: 1px solid #333; display: flex; gap: 10px; z-index: 150; padding-bottom: env(safe-area-inset-bottom, 15px); }
+
+    /* 下部タブバー（フローティング） */
     .tab-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background-color: rgba(17, 17, 17, 0.95); border: 1px solid #333; border-radius: 20px; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .tab-item.active { color: #ffffff; }
     .tab-item svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; }
-    
-    /* プロフィール画像用 */
-    .avatar-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #333; }
 
     .screen { display: none; animation: fadeIn 0.3s; }
     .screen.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -67,65 +70,77 @@
       </div>
     </div>
 
-    <!-- 1. さがす画面 -->
+    <!-- 1. さがす画面（タイムライン） -->
     <div id="screen-search" class="screen">
-      <div id="posts-container">
-        <p style="color: #888; text-align: center;">募集データを読み込み中...</p>
-      </div>
+      <div id="posts-container"><p style="color: #888; text-align: center;">募集データを読み込み中...</p></div>
     </div>
 
     <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
+      <!-- 日程の複数選択 -->
       <div style="margin-bottom: 30px;">
-        <div class="section-title">📍 開催ジムを選択</div>
+        <div class="section-title">📅 希望日（複数追加できます）</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="date" id="post-date-input" class="input-field" style="margin: 0;">
+          <button class="btn-secondary" style="margin: 0; width: 80px;" onclick="addDate()">追加</button>
+        </div>
+        <div id="selected-dates-container"></div>
+      </div>
+
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">📍 開催ジム（複数選択可）</div>
         <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">エニタイムフィットネス</div>
         <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">Gold's Gym</div>
         <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">港区スポーツセンター</div>
+        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">その他公営ジム</div>
       </div>
+      
       <div style="margin-bottom: 30px;">
         <div class="section-title">💪 メイン部位</div>
+        <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">すべて</div>
         <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">胸</div>
         <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">背中</div>
         <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">脚</div>
+        <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">肩</div>
+        <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">腕</div>
       </div>
-      <!-- 確認画面を呼び出すボタン -->
+      
       <button class="btn-primary" onclick="openConfirmModal()">内容を確認する</button>
     </div>
 
-    <!-- 3. フレンド＆メッセージ画面 -->
+    <!-- 3. フレンド＆メッセージ一覧画面 -->
     <div id="screen-friends" class="screen">
-      <div class="section-title">フレンド一覧</div>
-      <div id="friends-container">
-        <!-- モックデータ（将来的にデータベースから取得） -->
-        <div class="list-item" onclick="alert('TAKUYAさんとのチャット画面が開きます（開発中）')">
-          <div class="avatar">T</div>
-          <div>
-            <div style="font-weight: bold; font-size: 16px;">TAKUYA</div>
-            <div style="font-size: 12px; color: #888;">昨日はありがとうございました！</div>
-          </div>
-        </div>
-        <div class="list-item" onclick="alert('KENJIさんとのチャット画面が開きます（開発中）')">
-          <div class="avatar">K</div>
-          <div>
-            <div style="font-weight: bold; font-size: 16px;">KENJI</div>
-            <div style="font-size: 12px; color: #888;">来週の脚トレ、よろしくお願いします。</div>
-          </div>
-        </div>
+      <div class="section-title">IDでフレンド追加</div>
+      <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+        <input type="text" id="search-uid" class="input-field" placeholder="相手のIDを入力" style="margin: 0;">
+        <button class="btn-secondary" style="margin: 0; width: 100px;" onclick="searchAndAddFriend()">追加</button>
+      </div>
+
+      <div class="section-title">フレンド一覧（タップしてチャット）</div>
+      <div id="friends-container"><p style="color: #888; font-size: 13px;">まだフレンドがいません。募集から追加するか、IDを検索してください。</p></div>
+    </div>
+
+    <!-- 3-5. 個別チャット画面（タブバー非表示） -->
+    <div id="screen-chat" class="screen">
+      <div id="chat-messages" style="display: flex; flex-direction: column; padding-bottom: 20px;"></div>
+      <div class="chat-input-area">
+        <button class="btn-secondary" style="width: 50px; margin: 0; padding: 10px;" onclick="closeChat()">戻る</button>
+        <input type="text" id="chat-text" class="input-field" placeholder="メッセージを入力..." style="margin: 0;">
+        <button class="btn-primary" style="width: 70px; margin: 0; padding: 10px;" onclick="sendMessage()">送信</button>
       </div>
     </div>
 
-<!-- 4. マイページ（設定）画面 -->
+    <!-- 4. マイページ（設定）画面 -->
     <div id="screen-mypage" class="screen">
       <div style="text-align: center; margin-bottom: 20px; position: relative;">
-        <!-- 画像プレビュー部分（タップでファイル選択） -->
         <div id="avatar-container" onclick="document.getElementById('profile-image-upload').click()" style="cursor: pointer; display: inline-block; position: relative;">
-          <div class="avatar" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto;" id="mypage-avatar">U</div>
-          <!-- カメラのアイコン -->
-          <div style="position: absolute; bottom: 0; right: 0; background: #fff; color: #000; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-          </div>
+          <div class="avatar-small" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto;" id="mypage-avatar">U</div>
         </div>
         <input type="file" id="profile-image-upload" accept="image/*" style="display: none;" onchange="previewImage(event)">
+        <!-- 自分のID表示 -->
+        <div style="margin-top: 15px; font-size: 13px; color: #888;">
+          あなたのID: <span id="my-uid-display" style="color: #fff; font-weight: bold; user-select: all;"></span>
+        </div>
       </div>
       
       <div class="section-title">表示名</div>
@@ -141,43 +156,12 @@
         <option value="10年以上">10年以上</option>
       </select>
 
-      <div class="section-title">メインの契約ジム</div>
-      <select id="profile-gyms" class="input-field">
-        <option value="">選択してください</option>
-        <option value="エニタイムフィットネス">エニタイムフィットネス</option>
-        <option value="Gold's Gym">Gold's Gym</option>
-        <option value="FASTGYM24">FASTGYM24</option>
-        <option value="JOYFIT24">JOYFIT24</option>
-        <option value="FiT24">FiT24</option>
-        <option value="FIT PLACE24">FIT PLACE24</option>
-        <option value="FIT365">FIT365</option>
-        <option value="chocoZAP">chocoZAP</option>
-        <option value="LIFE FIT">LIFE FIT</option>
-        <option value="スポーツクラブルネサンス">スポーツクラブルネサンス</option>
-        <option value="コナミスポーツクラブ">コナミスポーツクラブ</option>
-        <option value="セントラルスポーツ">セントラルスポーツ</option>
-        <option value="ティップネス">ティップネス</option>
-        <option value="メガロス">メガロス</option>
-        <option value="ジェクサー">ジェクサー</option>
-        <option value="スポーツクラブNAS">スポーツクラブNAS</option>
-        <option value="Gold's Gym">Gold's Gym</option>
-        <option value="カーブス">カーブス</option>
-        <option value="Bodies">Bodies</option>
-        <option value="FURDI">FURDI</option>
-        <option value="公営ジムメイン">公営ジムメイン</option>
-        <option value="その他">その他</option>
-      </select>
-      
-<div class="section-title">自己紹介</div>
-      <textarea id="profile-bio" class="input-field" placeholder="得意な種目や目標などを入力"></textarea>
-
       <button class="btn-primary" onclick="saveProfile()">プロフィールを保存する</button>
-      <button class="btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())">ログアウト</button>
+      <button class="btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())" style="margin-bottom: 50px;">ログアウト</button>
     </div>
+  </div>
 
-  </div> <!-- containerの終わり -->
-
-  <!-- 投稿確認モーダル（ポップアップ） -->
+  <!-- 投稿確認モーダル -->
   <div id="confirm-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 style="margin-top: 0;">以下の内容で募集しますか？</h3>
@@ -187,7 +171,7 @@
     </div>
   </div>
 
-  <!-- 下部タブバー（アイコン追加版） -->
+  <!-- 下部タブバー -->
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
     <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -195,9 +179,9 @@
     </div>
     <div class="tab-item" onclick="switchTab('screen-post', '募集を作成')">
       <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-      募集する
+      募集
     </div>
-    <div class="tab-item" onclick="switchTab('screen-friends', 'メッセージ')">
+    <div class="tab-item" onclick="switchTab('screen-friends', 'フレンド・メッセージ')">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
       メッセージ
     </div>
@@ -206,9 +190,9 @@
       マイページ
     </div>
   </div>
-  
+
   <script>
-    // ▼▼▼ オーナー様のFirebase APIキーをここに貼り付けます ▼▼▼
+    // ▼▼▼ APIキーを上書きしてください ▼▼▼
     const firebaseConfig = {
       apiKey: "AIzaSyA43zyt2XOK6-Pqwd0AAQcMYIcIqGpUsW4",
       authDomain: "joint-training.firebaseapp.com",
@@ -218,84 +202,67 @@
       appId: "1:479294292720:web:bcdb0d54b4c7ce46c9b835",
       measurementId: "G-Q6KXKNPJFH"
     };
-
-
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // 画面切り替え
+    // === 画面制御 ===
     function switchTab(screenId, headerTitle) {
       document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
       document.getElementById('app-header').innerText = headerTitle;
-      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-      event.currentTarget.classList.add('active');
+      
+      // チャット画面の時は下部タブを隠す
+      const tabs = document.getElementById('bottom-tabs');
+      if(screenId === 'screen-chat' || screenId === 'screen-login') {
+        tabs.style.display = 'none';
+      } else {
+        tabs.style.display = 'flex';
+        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+        if(event && event.currentTarget.classList) event.currentTarget.classList.add('active');
+      }
       window.scrollTo(0, 0);
     }
 
-    // ログイン処理
+    // === 認証・プロフィール ===
     function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(error => console.error(error));
+      auth.signInWithRedirect(provider).catch(error => alert("エラー: " + error.message));
     }
 
-    // ログイン状態の監視（ログインしたらタブを表示）
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById('bottom-tabs').style.display = 'flex';
+        document.getElementById('my-uid-display').innerText = user.uid; // 自分のIDを表示
         switchTab('screen-search', 'JOINT TRAINING');
         loadPosts();
         loadProfile(user.uid);
+        loadFriends();
       } else {
-        document.getElementById('bottom-tabs').style.display = 'none';
         switchTab('screen-login', 'JOINT TRAINING');
       }
     });
 
-/* ==================================
-       1. マイページ（プロフィール設定）機能
-       ================================== */
-    let currentProfileImage = null; // 選択した画像のデータを保持する変数
-
-    // 画像が選ばれたときの処理
+    let currentProfileImage = null;
     function previewImage(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function(e) {
-        // 画像の容量を小さくして保存するための処理
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
-          const MAX_WIDTH = 200; // 最大200pxに縮小
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height && width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          } else if (height > MAX_WIDTH) {
-            width *= MAX_WIDTH / height;
-            height = MAX_WIDTH;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-          
+          const MAX = 200;
+          let w = img.width, h = img.height;
+          if (w > h && w > MAX) { h *= MAX / w; w = MAX; } 
+          else if (h > MAX) { w *= MAX / h; h = MAX; }
+          canvas.width = w; canvas.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
           currentProfileImage = canvas.toDataURL('image/jpeg', 0.8);
-          
-          // 選んだ画像を表示する
-          document.getElementById('avatar-container').innerHTML = `
-            <img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">
-            <div style="position: absolute; bottom: 0; right: 0; background: #fff; color: #000; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            </div>
-          `;
+          document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">`;
         };
         img.src = e.target.result;
       };
@@ -307,21 +274,10 @@
         if (doc.exists) {
           const data = doc.data();
           document.getElementById('profile-name').value = data.name || auth.currentUser.displayName;
-          document.getElementById('profile-bio').value = data.bio || "";
           document.getElementById('profile-history').value = data.history || "";
-          document.getElementById('profile-gyms').value = data.gyms || "";
-          
-          // 保存された写真があれば表示する
           if (data.photoURL) {
             currentProfileImage = data.photoURL;
-            document.getElementById('avatar-container').innerHTML = `
-              <img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">
-              <div style="position: absolute; bottom: 0; right: 0; background: #fff; color: #000; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-              </div>
-            `;
-          } else {
-            document.getElementById('mypage-avatar').innerText = (data.name || auth.currentUser.displayName).charAt(0);
+            document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">`;
           }
         }
       });
@@ -329,89 +285,211 @@
 
     function saveProfile() {
       const uid = auth.currentUser.uid;
-      const name = document.getElementById('profile-name').value;
-      const bio = document.getElementById('profile-bio').value;
-      const history = document.getElementById('profile-history').value;
-      const gyms = document.getElementById('profile-gyms').value;
-
       db.collection("users").doc(uid).set({
-        name: name,
-        bio: bio,
-        history: history,
-        gyms: gyms,
-        photoURL: currentProfileImage, // 写真データも一緒に保存
+        name: document.getElementById('profile-name').value,
+        history: document.getElementById('profile-history').value,
+        photoURL: currentProfileImage,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true }).then(() => {
-        alert("プロフィールを保存しました！");
-      });
+      }, { merge: true }).then(() => alert("保存しました！"));
     }
-    /* ==================================
-       4. 投稿確認モーダル & 募集機能
-       ================================== */
+
+    // === 募集機能（日程複数選択対応） ===
+    let selectedDates = [];
+    
+    function addDate() {
+      const dateVal = document.getElementById('post-date-input').value;
+      if(dateVal && !selectedDates.includes(dateVal)) {
+        selectedDates.push(dateVal);
+        renderDates();
+      }
+    }
+    
+    function renderDates() {
+      const container = document.getElementById('selected-dates-container');
+      container.innerHTML = selectedDates.map(d => `<div class="part-btn selected" onclick="removeDate('${d}')">${d} ✕</div>`).join('');
+    }
+    
+    function removeDate(d) {
+      selectedDates = selectedDates.filter(x => x !== d);
+      renderDates();
+    }
+
     function openConfirmModal() {
       const gyms = Array.from(document.querySelectorAll('.gym-btn.selected')).map(el => el.innerText);
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
 
-      if (gyms.length === 0 || parts.length === 0) {
-        return alert("ジムと部位を1つ以上選択してください。");
+      if (gyms.length === 0 || parts.length === 0 || selectedDates.length === 0) {
+        return alert("希望日・ジム・部位をそれぞれ1つ以上選択してください。");
       }
 
-      const content = `
+      document.getElementById('confirm-content').innerHTML = `
+        <strong>📅 日程:</strong><br>${selectedDates.join(', ')}<br><br>
         <strong>📍 場所:</strong><br>${gyms.join(', ')}<br><br>
         <strong>💪 部位:</strong><br>${parts.join(', ')}
       `;
-      document.getElementById('confirm-content').innerHTML = content;
       document.getElementById('confirm-modal').style.display = 'flex';
     }
 
-    function closeConfirmModal() {
-      document.getElementById('confirm-modal').style.display = 'none';
-    }
+    function closeConfirmModal() { document.getElementById('confirm-modal').style.display = 'none'; }
 
     function submitPost() {
       const user = auth.currentUser;
       const gyms = Array.from(document.querySelectorAll('.gym-btn.selected')).map(el => el.innerText);
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
 
-      // マイページで設定した名前を取得して投稿
       db.collection("users").doc(user.uid).get().then(doc => {
         const hostName = doc.exists && doc.data().name ? doc.data().name : user.displayName;
+        const photoURL = doc.exists ? doc.data().photoURL : null;
         
         db.collection("posts").add({
           uid: user.uid,
           hostName: hostName,
+          hostPhoto: photoURL,
+          dates: selectedDates, // 複数日程を保存
           gyms: gyms,
           parts: parts,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
           closeConfirmModal();
           alert("募集を確定しました！");
+          selectedDates = []; renderDates(); // リセット
           document.querySelectorAll('#screen-post .selected').forEach(el => el.classList.remove('selected'));
           switchTab('screen-search', 'JOINT TRAINING');
         });
       });
     }
 
-    /* タイムライン読み込み機能 */
     function loadPosts() {
-      db.collection("posts").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
+      db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
         const container = document.getElementById('posts-container');
         container.innerHTML = ""; 
-        if(querySnapshot.empty) {
-          container.innerHTML = "<p style='color:#888; text-align:center;'>まだ募集がありません。</p>";
-          return;
-        }
-        querySnapshot.forEach((doc) => {
+        if(snap.empty) return container.innerHTML = "<p style='color:#888; text-align:center;'>募集がありません。</p>";
+        
+        snap.forEach(doc => {
           const post = doc.data();
+          const datesText = post.dates ? post.dates.join(" / ") : "";
           const gymsText = post.gyms ? post.gyms.join(" / ") : "";
           const partsText = post.parts ? post.parts.join("・") : "";
+          const avatarHtml = post.hostPhoto ? `<img src="${post.hostPhoto}" class="avatar-small">` : `<div class="avatar-small">${post.hostName.charAt(0)}</div>`;
+          
+          // 自分以外の募集には「フレンド申請」ボタンを表示
+          let actionBtn = post.uid === auth.currentUser.uid 
+            ? `<div style="text-align:right; color:#888; font-size:12px; margin-top:10px;">自分の募集</div>`
+            : `<button class="btn-primary" style="padding: 10px; margin-top: 15px; font-size:13px;" onclick="addFriend('${post.uid}')">🤝 フレンド申請</button>`;
+
           container.innerHTML += `
             <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-              <h3 style="margin: 0 0 10px 0; font-size: 18px;">${post.hostName}</h3>
-              <p style="color: #ccc; font-size: 14px; margin: 0; line-height: 1.5;">📍 ${gymsText}<br>💪 ${partsText}</p>
+              <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                ${avatarHtml}
+                <h3 style="margin: 0; font-size: 16px;">${post.hostName}</h3>
+              </div>
+              <p style="color: #ccc; font-size: 14px; margin: 0; line-height: 1.6;">
+                📅 ${datesText}<br>📍 ${gymsText}<br>💪 ${partsText}
+              </p>
+              ${actionBtn}
             </div>
           `;
         });
+      });
+    }
+
+    // === フレンド・メッセージ機能 ===
+    function searchAndAddFriend() {
+      const targetUid = document.getElementById('search-uid').value.trim();
+      addFriend(targetUid);
+    }
+
+    function addFriend(targetUid) {
+      const myUid = auth.currentUser.uid;
+      if(!targetUid) return alert("IDが入力されていません");
+      if(myUid === targetUid) return alert("自分自身は追加できません");
+
+      // お互いのドキュメントの friends 配列にIDを追加する
+      db.collection("users").doc(myUid).set({ friends: firebase.firestore.FieldValue.arrayUnion(targetUid) }, {merge:true});
+      db.collection("users").doc(targetUid).set({ friends: firebase.firestore.FieldValue.arrayUnion(myUid) }, {merge:true});
+      
+      alert("フレンドに追加しました！メッセージ一覧からチャットが可能です。");
+      document.getElementById('search-uid').value = "";
+    }
+
+    function loadFriends() {
+      const myUid = auth.currentUser.uid;
+      db.collection("users").doc(myUid).onSnapshot(doc => {
+        const friends = doc.data()?.friends || [];
+        const container = document.getElementById('friends-container');
+        container.innerHTML = "";
+        
+        if(friends.length === 0) {
+          container.innerHTML = "<p style='color:#888; font-size:13px;'>まだフレンドがいません。</p>";
+          return;
+        }
+
+        friends.forEach(fUid => {
+          db.collection("users").doc(fUid).get().then(fDoc => {
+            const fData = fDoc.data() || {};
+            const name = fData.name || "名称未設定";
+            const avatarHtml = fData.photoURL ? `<img src="${fData.photoURL}" class="avatar-small">` : `<div class="avatar-small">${name.charAt(0)}</div>`;
+            
+            container.innerHTML += `
+              <div class="list-item" onclick="openChat('${fUid}', '${name}')">
+                ${avatarHtml}
+                <div style="font-weight: bold; font-size: 16px;">${name}</div>
+              </div>
+            `;
+          });
+        });
+      });
+    }
+
+    // チャット画面ロジック
+    let currentChatId = null;
+    let chatUnsubscribe = null;
+
+    function openChat(friendUid, friendName) {
+      // 1対1のユニークなチャットルームIDを生成（UIDをアルファベット順に繋ぐ）
+      currentChatId = [auth.currentUser.uid, friendUid].sort().join('_');
+      switchTab('screen-chat', friendName);
+      
+      // 過去のメッセージ読み込み＆リアルタイム更新
+      if(chatUnsubscribe) chatUnsubscribe();
+      chatUnsubscribe = db.collection("chats").doc(currentChatId).collection("messages")
+        .orderBy("createdAt", "asc")
+        .onSnapshot(snap => {
+          const msgBox = document.getElementById('chat-messages');
+          msgBox.innerHTML = "";
+          snap.forEach(doc => {
+            const msg = doc.data();
+            const isMe = msg.sender === auth.currentUser.uid;
+            const align = isMe ? "flex-end" : "flex-start";
+            const bubbleClass = isMe ? "chat-me" : "chat-friend";
+            
+            msgBox.innerHTML += `
+              <div style="display: flex; justify-content: ${align}; width: 100%;">
+                <div class="chat-bubble ${bubbleClass}">${msg.text}</div>
+              </div>
+            `;
+          });
+          window.scrollTo(0, document.body.scrollHeight); // 一番下へスクロール
+        });
+    }
+
+    function closeChat() {
+      if(chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
+      currentChatId = null;
+      switchTab('screen-friends', 'フレンド・メッセージ');
+    }
+
+    function sendMessage() {
+      if(!currentChatId) return;
+      const text = document.getElementById('chat-text').value.trim();
+      if(!text) return;
+
+      db.collection("chats").doc(currentChatId).collection("messages").add({
+        sender: auth.currentUser.uid,
+        text: text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        document.getElementById('chat-text').value = ""; // 入力欄をクリア
       });
     }
   </script>
