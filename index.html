@@ -33,10 +33,14 @@
     .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
     .avatar { width: 40px; height: 40px; background-color: #333; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
 
-    /* 下部タブバー */
-    .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #111111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: env(safe-area-inset-bottom, 12px); z-index: 100; }
-    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; }
+/* 下部タブバー（少し上に浮かせたフローティングデザイン） */
+    .tab-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background-color: rgba(17, 17, 17, 0.95); border: 1px solid #333; border-radius: 20px; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .tab-item.active { color: #ffffff; }
+    .tab-item svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; }
+    
+    /* プロフィール画像用 */
+    .avatar-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #333; }
 
     .screen { display: none; animation: fadeIn 0.3s; }
     .screen.active { display: block; }
@@ -112,8 +116,16 @@
 
 <!-- 4. マイページ（設定）画面 -->
     <div id="screen-mypage" class="screen">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div class="avatar" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto 10px;" id="mypage-avatar">U</div>
+      <div style="text-align: center; margin-bottom: 20px; position: relative;">
+        <!-- 画像プレビュー部分（タップでファイル選択） -->
+        <div id="avatar-container" onclick="document.getElementById('profile-image-upload').click()" style="cursor: pointer; display: inline-block; position: relative;">
+          <div class="avatar" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto;" id="mypage-avatar">U</div>
+          <!-- カメラのアイコン -->
+          <div style="position: absolute; bottom: 0; right: 0; background: #fff; color: #000; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          </div>
+        </div>
+        <input type="file" id="profile-image-upload" accept="image/*" style="display: none;" onchange="previewImage(event)">
       </div>
       
       <div class="section-title">表示名</div>
@@ -133,6 +145,7 @@
       <select id="profile-gyms" class="input-field">
         <option value="">選択してください</option>
         <option value="エニタイムフィットネス">エニタイムフィットネス</option>
+        <option value="Gold's Gym">Gold's Gym</option>
         <option value="FASTGYM24">FASTGYM24</option>
         <option value="JOYFIT24">JOYFIT24</option>
         <option value="FiT24">FiT24</option>
@@ -155,13 +168,15 @@
         <option value="その他">その他</option>
       </select>
       
-      <div class="section-title">自己紹介</div>
+<div class="section-title">自己紹介</div>
       <textarea id="profile-bio" class="input-field" placeholder="得意な種目や目標などを入力"></textarea>
 
       <button class="btn-primary" onclick="saveProfile()">プロフィールを保存する</button>
       <button class="btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())">ログアウト</button>
     </div>
-    
+
+  </div> <!-- containerの終わり -->
+
   <!-- 投稿確認モーダル（ポップアップ） -->
   <div id="confirm-modal" class="modal-overlay">
     <div class="modal-content">
@@ -172,14 +187,26 @@
     </div>
   </div>
 
-  <!-- 下部タブバー -->
+  <!-- 下部タブバー（アイコン追加版） -->
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
-    <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')">さがす</div>
-    <div class="tab-item" onclick="switchTab('screen-post', '募集を作成')">募集する</div>
-    <div class="tab-item" onclick="switchTab('screen-friends', 'メッセージ')">メッセージ</div>
-    <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')">マイページ</div>
+    <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      さがす
+    </div>
+    <div class="tab-item" onclick="switchTab('screen-post', '募集を作成')">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+      募集する
+    </div>
+    <div class="tab-item" onclick="switchTab('screen-friends', 'メッセージ')">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      メッセージ
+    </div>
+    <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      マイページ
+    </div>
   </div>
-
+  
   <script>
     // ▼▼▼ オーナー様のFirebase APIキーをここに貼り付けます ▼▼▼
     const firebaseConfig = {
@@ -228,20 +255,74 @@
       }
     });
 
-    /* ==================================
+/* ==================================
        1. マイページ（プロフィール設定）機能
        ================================== */
+    let currentProfileImage = null; // 選択した画像のデータを保持する変数
+
+    // 画像が選ばれたときの処理
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        // 画像の容量を小さくして保存するための処理
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          const MAX_WIDTH = 200; // 最大200pxに縮小
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height && width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          } else if (height > MAX_WIDTH) {
+            width *= MAX_WIDTH / height;
+            height = MAX_WIDTH;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          currentProfileImage = canvas.toDataURL('image/jpeg', 0.8);
+          
+          // 選んだ画像を表示する
+          document.getElementById('avatar-container').innerHTML = `
+            <img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">
+            <div style="position: absolute; bottom: 0; right: 0; background: #fff; color: #000; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </div>
+          `;
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
     function loadProfile(uid) {
       db.collection("users").doc(uid).get().then(doc => {
         if (doc.exists) {
           const data = doc.data();
           document.getElementById('profile-name').value = data.name || auth.currentUser.displayName;
           document.getElementById('profile-bio').value = data.bio || "";
+          document.getElementById('profile-history').value = data.history || "";
           document.getElementById('profile-gyms').value = data.gyms || "";
-          document.getElementById('mypage-avatar').innerText = (data.name || auth.currentUser.displayName).charAt(0);
-        } else {
-          document.getElementById('profile-name').value = auth.currentUser.displayName;
-          document.getElementById('mypage-avatar').innerText = auth.currentUser.displayName.charAt(0);
+          
+          // 保存された写真があれば表示する
+          if (data.photoURL) {
+            currentProfileImage = data.photoURL;
+            document.getElementById('avatar-container').innerHTML = `
+              <img src="${currentProfileImage}" class="avatar-img" style="margin: 0 auto;">
+              <div style="position: absolute; bottom: 0; right: 0; background: #fff; color: #000; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              </div>
+            `;
+          } else {
+            document.getElementById('mypage-avatar').innerText = (data.name || auth.currentUser.displayName).charAt(0);
+          }
         }
       });
     }
@@ -250,18 +331,20 @@
       const uid = auth.currentUser.uid;
       const name = document.getElementById('profile-name').value;
       const bio = document.getElementById('profile-bio').value;
+      const history = document.getElementById('profile-history').value;
       const gyms = document.getElementById('profile-gyms').value;
 
       db.collection("users").doc(uid).set({
         name: name,
         bio: bio,
+        history: history,
         gyms: gyms,
+        photoURL: currentProfileImage, // 写真データも一緒に保存
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => {
         alert("プロフィールを保存しました！");
       });
     }
-
     /* ==================================
        4. 投稿確認モーダル & 募集機能
        ================================== */
