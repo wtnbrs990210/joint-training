@@ -32,7 +32,7 @@
     
     /* タブバー・画面・未読バッジ */
     .tab-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background-color: rgba(17, 17, 17, 0.95); border: 1px solid #333; border-radius: 20px; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+    .tab-item { color: #666; text-align: center; font-size: 10px; flex: 1; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
     .tab-item.active { color: #ffffff; }
     .tab-item svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; }
     .screen { display: none; animation: fadeIn 0.3s; }
@@ -42,6 +42,9 @@
     /* 通知バッジ */
     .badge { background: #e74c3c; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -5px; right: 15%; display: none; }
     .unread-dot { background: #e74c3c; width: 10px; height: 10px; border-radius: 50%; display: none; margin-left: auto; }
+    
+    /* 管理者ダッシュボード用 */
+    .admin-card { background: #161616; border: 1px solid #333; border-radius: 8px; padding: 15px; flex: 1; text-align: center; }
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -160,7 +163,28 @@
         <div id="mypage-stats" style="color: #ffcc00; font-size: 16px; font-weight: bold; margin: 10px 0; letter-spacing: 1px;">🔥合トレ: 0回 ｜ ⭐評価: -</div>
         <div style="margin-top: 5px; font-size: 12px; color: #888;">ID: <span id="my-uid-display" style="color: #fff; font-weight: bold; user-select: all;"></span></div>
       </div>
-      <div class="section-title">表示名</div><input type="text" id="profile-name" class="input-field" placeholder="名前">
+      
+      <div class="section-title">表示名</div>
+      <input type="text" id="profile-name" class="input-field" placeholder="名前">
+      
+      <!-- 🆕 生年月日と性別の設定 -->
+      <div style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <div class="section-title">生年月日</div>
+          <input type="date" id="profile-birthdate" class="input-field" style="margin-bottom: 15px;">
+        </div>
+        <div style="flex: 1;">
+          <div class="section-title">性別</div>
+          <select id="profile-gender" class="input-field" style="margin-bottom: 15px;">
+            <option value="">選択してください</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="その他">その他</option>
+            <option value="無回答">無回答</option>
+          </select>
+        </div>
+      </div>
+
       <div class="section-title">自己紹介</div><textarea id="profile-bio" class="input-field" placeholder="得意な種目など"></textarea>
       <div class="section-title">筋トレ歴</div>
       <select id="profile-history" class="input-field">
@@ -168,8 +192,30 @@
       </select>
       <div class="section-title">メインの契約ジム</div>
       <select id="profile-gyms" class="input-field"><option value="">選択してください</option></select>
+      
       <button class="btn-primary" onclick="saveProfile()">プロフィールを保存</button>
       <button class="btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())" style="margin-bottom: 50px;">ログアウト</button>
+    </div>
+
+    <!-- 🌟 5. 管理者ダッシュボード画面（オーナー専用） -->
+    <div id="screen-admin" class="screen">
+      <div class="section-title">📊 アプリの状況</div>
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div class="admin-card">
+          <div style="font-size: 11px; color: #888; margin-bottom: 5px;">総ユーザー数</div>
+          <div id="admin-total-users" style="font-size: 24px; font-weight: bold; color: #ffcc00;">-</div>
+        </div>
+        <div class="admin-card">
+          <div style="font-size: 11px; color: #888; margin-bottom: 5px;">本日の新規募集</div>
+          <div id="admin-today-posts" style="font-size: 24px; font-weight: bold; color: #ffcc00;">-</div>
+        </div>
+        <div class="admin-card">
+          <div style="font-size: 11px; color: #888; margin-bottom: 5px;">完了した合トレ</div>
+          <div id="admin-total-matches" style="font-size: 24px; font-weight: bold; color: #ffcc00;">-</div>
+        </div>
+      </div>
+      <div class="section-title">🗑️ 投稿管理（最新30件）</div>
+      <div id="admin-posts-container"></div>
     </div>
   </div>
 
@@ -256,11 +302,17 @@
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
     <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>さがす</div>
     <div class="tab-item" onclick="openPostTabNew()"><svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>募集</div>
+    
     <div class="tab-item" onclick="switchTab('screen-messages', 'メッセージ')">
       <div id="msg-badge-total" class="badge">0</div>
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>メッセージ
     </div>
+    
     <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>マイページ</div>
+
+    <div class="tab-item" id="tab-admin" style="display: none;" onclick="switchTab('screen-admin', 'ダッシュボード')">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>管理
+    </div>
   </div>
 
   <script>
@@ -280,6 +332,8 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    const ADMIN_UID = "FG4kOkTEfqMZ4C9wKyINk0L7UfI3"; // オーナー様のID
+
     const areaList = ["千代田区","中央区","港区","新宿区","文京区","台東区","墨田区","江東区","品川区","目黒区","大田区","世田谷区","渋谷区","中野区","杉並区","豊島区","北区","荒川区","板橋区","練馬区","足立区","葛飾区","江戸川区","都下・その他"];
     const gymList = ["エニタイムフィットネス","FASTGYM24","JOYFIT24","FiT24","FIT PLACE24","FIT365","chocoZAP","LIFE FIT","スポーツクラブルネサンス","コナミスポーツクラブ","セントラルスポーツ","ティップネス","メガロス","ジェクサー","スポーツクラブNAS","Gold's Gym","カーブス","Bodies","FURDI","公営ジムメイン","その他"];
     
@@ -293,6 +347,24 @@
       document.getElementById('post-gym-input').innerHTML += gymHtml;
       document.getElementById('profile-gyms').innerHTML += gymHtml;
     };
+
+    // 🆕 年代と性別をフォーマットする便利関数
+    function getDemographicString(birthdate, gender) {
+      let ageGroup = "";
+      if (birthdate) {
+        const birthDateObj = new Date(birthdate);
+        const today = new Date();
+        let age = today.getFullYear() - birthDateObj.getFullYear();
+        const m = today.getMonth() - birthDateObj.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) { age--; }
+        ageGroup = age >= 10 ? Math.floor(age / 10) * 10 + "代" : "10代未満";
+      }
+      let gStr = (gender && gender !== "無回答" && gender !== "選択してください") ? gender : "";
+      if (ageGroup || gStr) {
+        return `（${ageGroup}${gStr}）`;
+      }
+      return "";
+    }
 
     let unreadMap = {};
     function updateUnread(key, count) {
@@ -329,28 +401,17 @@
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     function loginWithGoogle() {
       const ua = navigator.userAgent.toLowerCase();
-      // LINEなどのアプリ内ブラウザからのアクセスを検知して案内を出す
       if (ua.indexOf('line') > -1 || ua.indexOf('instagram') > -1) {
-        alert("LINEなどのアプリ内ブラウザでは、セキュリティ制限によりログインできない場合があります。\n\n画面右下（または右上）のメニューボタン「⋮」や「↑」から、「デフォルトのブラウザで開く（Safari等）」を選択して開き直してください。");
+        alert("LINE等のアプリ内ブラウザではログインできない場合があります。\n右下のメニューから「デフォルトのブラウザで開く（Safari等）」を選択してください。");
       }
-      
       const provider = new firebase.auth.GoogleAuthProvider();
-      
-      // ホーム画面アプリやChromeで安定する「ポップアップ方式」を基本にする
       auth.signInWithPopup(provider).catch(error => {
-        // もしブラウザにポップアップをブロックされたら「リダイレクト方式」に自動で切り替える安全設計
-        if (error.code === 'auth/popup-blocked') {
-          auth.signInWithRedirect(provider);
-        } else {
-          alert("ログインエラー: " + error.message);
-        }
+        if (error.code === 'auth/popup-blocked') { auth.signInWithRedirect(provider); } 
+        else { alert("ログインエラー: " + error.message); }
       });
     }
+    auth.getRedirectResult().catch(error => { console.error("Redirect Login Error:", error); });
 
-    // リダイレクト方式で戻ってきた場合のエラーキャッチ
-    auth.getRedirectResult().catch(error => {
-      console.error("Redirect Login Error:", error);
-    });
     let myProfileData = {};
     let myFriends = []; 
     let myCommunities = []; 
@@ -363,6 +424,11 @@
         loadCommunities();
         applyFilter();
         loadMessagesAndRequests();
+        
+        if(user.uid === ADMIN_UID) {
+          document.getElementById('tab-admin').style.display = 'flex';
+          loadAdminData();
+        }
       } else switchTab('screen-login', 'JOINT TRAINING');
     });
 
@@ -392,6 +458,11 @@
           document.getElementById('profile-bio').value = myProfileData.bio || "";
           document.getElementById('profile-history').value = myProfileData.history || "";
           document.getElementById('profile-gyms').value = myProfileData.gyms || "";
+          
+          // 生年月日と性別の読み込み
+          document.getElementById('profile-birthdate').value = myProfileData.birthdate || "";
+          document.getElementById('profile-gender').value = myProfileData.gender || "";
+
           if (myProfileData.photoURL) {
             currentProfileImage = myProfileData.photoURL;
             document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-small" style="margin:0 auto; width:80px; height:80px;">`;
@@ -404,9 +475,14 @@
 
     function saveProfile() {
       db.collection("users").doc(auth.currentUser.uid).set({
-        name: document.getElementById('profile-name').value, bio: document.getElementById('profile-bio').value,
-        history: document.getElementById('profile-history').value, gyms: document.getElementById('profile-gyms').value,
-        photoURL: currentProfileImage, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        name: document.getElementById('profile-name').value, 
+        bio: document.getElementById('profile-bio').value,
+        history: document.getElementById('profile-history').value, 
+        gyms: document.getElementById('profile-gyms').value,
+        birthdate: document.getElementById('profile-birthdate').value,  // 保存
+        gender: document.getElementById('profile-gender').value,        // 保存
+        photoURL: currentProfileImage, 
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true }).then(() => alert("保存しました！"));
     }
 
@@ -433,7 +509,7 @@
       });
     }
 
-    // === 募集機能 ＆ タイムライン（最新プロフィール情報連動） ===
+    // === 募集機能 ===
     let selectedDates = []; let selectedPostAreas = []; let selectedPostGyms = []; let editingPostId = null;
     function openPostTabNew() {
       editingPostId = null; document.getElementById('post-description').value = "";
@@ -488,7 +564,7 @@
       }
     }
 
-    // タイムライン描画（プレースホルダーを使ってユーザー情報を非同期で引っ張る）
+    // 🌟 タイムライン描画（年代・性別・回数・評価 反映）
     function applyFilter() {
       const fDate = document.getElementById('filter-date').value; const fArea = document.getElementById('filter-area').value;
       const fPart = document.getElementById('filter-part').value;
@@ -535,13 +611,16 @@
           container.innerHTML = "<p style='text-align:center;'>条件に合う募集がありません。</p>";
         } else {
           container.innerHTML = htmlStr;
-          // DOM生成後にユーザー情報を流し込む
           userPromises.forEach(info => {
             db.collection("users").doc(info.uid).get().then(uDoc => {
               const uData = uDoc.data() || {};
               const uName = uData.name || "名称未設定";
               const uPhoto = uData.photoURL;
               const uBio = uData.bio || "";
+              
+              // 年代・性別の算出
+              const demoStr = getDemographicString(uData.birthdate, uData.gender);
+              
               const mCount = uData.matchCount || 0;
               let rAvg = 0; if(uData.ratingCount > 0) rAvg = (uData.ratingSum / uData.ratingCount).toFixed(1);
               
@@ -549,7 +628,7 @@
               if(avatarEl) avatarEl.innerHTML = uPhoto ? `<img src="${uPhoto}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;border:2px solid #555;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;margin-right:15px;font-size:20px;font-weight:bold;">${uName.charAt(0)}</div>`;
               
               const nameEl = document.getElementById("name-" + info.pId);
-              if(nameEl) nameEl.innerText = uName;
+              if(nameEl) nameEl.innerText = uName + (demoStr ? " " + demoStr : "");
               
               const statsEl = document.getElementById("stats-" + info.pId);
               if(statsEl) statsEl.innerText = `🔥合トレ: ${mCount}回 ｜ ⭐評価: ${rAvg > 0 ? rAvg : '-'}`;
@@ -661,6 +740,7 @@
       }
     }
 
+    // === コミュニティ作成・編集・削除 ===
     function openCreateCommunityModal() {
       if(myFriends.length === 0) return alert("まずはフレンドを追加してください。");
       const listDiv = document.getElementById('community-friends-list'); listDiv.innerHTML = "";
@@ -808,6 +888,36 @@
       if(targetUid === auth.currentUser.uid) return alert("自分自身は追加できません");
       db.collection("users").doc(auth.currentUser.uid).set({ friends: firebase.firestore.FieldValue.arrayUnion(targetUid) }, {merge:true});
       alert("フレンドに追加しました！"); document.getElementById('search-uid').value = "";
+    }
+
+    // ====== 🌟 管理者ダッシュボード ======
+    function loadAdminData() {
+      db.collection('users').get().then(snap => { document.getElementById('admin-total-users').innerText = snap.size; });
+      const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+      db.collection('posts').where('createdAt', '>=', startOfDay).get().then(snap => { document.getElementById('admin-today-posts').innerText = snap.size; });
+      db.collection('requests').where('status', '==', 'completed').get().then(snap => { document.getElementById('admin-total-matches').innerText = snap.size; });
+
+      db.collection('posts').orderBy('createdAt', 'desc').limit(30).onSnapshot(snap => {
+        const container = document.getElementById('admin-posts-container'); container.innerHTML = "";
+        snap.forEach(doc => {
+          const p = doc.data();
+          container.innerHTML += `
+            <div style="background: #222; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+              <div style="flex:1; margin-right: 10px;">
+                <div style="font-size: 13px; font-weight: bold; margin-bottom: 4px;">${p.hostName}</div>
+                <div style="font-size: 11px; color: #aaa;">${p.description || "メッセージなし"}</div>
+                <div style="font-size: 10px; color: #888; margin-top: 4px;">${p.dates ? p.dates.join(',') : ''}</div>
+              </div>
+              <button class="btn-secondary" style="margin:0; padding: 8px 12px; font-size: 12px; border-color: #e74c3c; color: #e74c3c; width: auto;" onclick="adminDeletePost('${doc.id}')">削除</button>
+            </div>`;
+        });
+      });
+    }
+
+    function adminDeletePost(postId) {
+      if(confirm("【管理者権限】\nこの投稿を強制的に削除しますか？")) {
+        db.collection('posts').doc(postId).delete().then(() => alert("削除しました。"));
+      }
     }
   </script>
 </body>
