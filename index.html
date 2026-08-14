@@ -9,88 +9,6 @@
   <link rel="apple-touch-icon" href="image_2e8be5.jpg">
 
   <style>
-    body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
-    header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 18px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
-    .container { max-width: 480px; margin: 0 auto; padding: 20px; }
-    .section-title { color: #888; font-size: 13px; font-weight: bold; margin-bottom: 10px; }
-    .btn-primary { background-color: #ffffff; color: #000000; border: none; padding: 14px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; }
-    .btn-secondary { background-color: transparent; color: #ffffff; border: 1px solid #555; padding: 14px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
-    .part-btn { background-color: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 10px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; display: inline-block; margin: 0 5px 10px 0; }
-    .part-btn.selected { background-color: #ffffff; color: #000000; border-color: #ffffff; }
-    .input-field { width: 100%; background-color: #1a1a1a; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; box-sizing: border-box; }
-    textarea.input-field { resize: vertical; min-height: 80px; }
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; justify-content: center; align-items: center; }
-    .modal-content { background-color: #161616; border: 1px solid #333; padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; }
-    .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
-    .avatar-small { width: 45px; height: 45px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; object-fit: cover; }
-    .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; margin-bottom: 10px; font-size: 14px; line-height: 1.5; display: inline-block; word-wrap: break-word; }
-    .chat-me { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
-    .chat-friend { background-color: #333333; color: #ffffff; border-bottom-left-radius: 4px; }
-    .chat-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; padding: 15px; box-sizing: border-box; border-top: 1px solid #333; display: flex; gap: 10px; z-index: 150; padding-bottom: env(safe-area-inset-bottom, 15px); }
-    .tab-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background-color: rgba(17, 17, 17, 0.95); border: 1px solid #333; border-radius: 20px; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .tab-item.active { color: #ffffff; }
-    .tab-item svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; }
-    .screen { display: none; animation: fadeIn 0.3s; }
-    .screen.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-  </style>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-</head>
-<body>
-
-  <header id="app-header">JOINT TRAINING</header>
-
-  <div class="container">
-    <!-- 0. ログイン画面 -->
-    <div id="screen-login" class="screen active">
-      <div style="text-align: center; margin-top: 50px;">
-        <img src="image_2e8be5.jpg" alt="LOGO" style="width: 150px; border-radius: 20px; margin-bottom: 30px;">
-        <h2>本気の合トレマッチング</h2>
-        <button class="btn-primary" onclick="loginWithGoogle()" style="margin-top: 40px;">Googleでログインして始める</button>
-      </div>
-    </div>
-
-    <!-- 1. さがす画面（タイムライン） -->
-    <div id="screen-search" class="screen">
-      <!-- 🔍 絞り込みフィルター（エリア・日付・部位 すべて搭載） -->
-      <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
-        <div class="section-title" style="margin-bottom: 10px;">🔍 条件で絞り込む</div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <input type="date" id="filter-date" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
-          <select id="filter-area" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
-            <option value="">全てのエリア</option><option value="千代田区">千代田区</option><option value="中央区">中央区</option><option value="港区">港区</option><option value="新宿区">新宿区</option><option value="文京区">文京区</option><option value="台東区">台東区</option><option value="墨田区">墨田区</option><option value="江東区">江東区</option><option value="品川区">品川区</option><option value="目黒区">目黒区</option><option value="大田区">大田区</option><option value="世田谷区">世田谷区</option><option value="渋谷区">渋谷区</option><option value="中野区">中野区</option><option value="杉並区">杉並区</option><大変申し訳ございません！！
-ご指摘の通り、コードの全体量が非常に長くなってしまったため、私が新機能を詰め込む際に、過去に追加した「投稿の編集機能」や「フィルターの部位検索」、「肩・腕の部位ボタン」、さらには「マイページのジムの選択肢」などを勝手に省略してしまっておりました。
-
-せっかく完璧に仕上がってきたアプリの機能を、私の都合で削ってしまい本当に申し訳ありません。
-
-これまでに実装した**「すべての機能」と「すべての選択肢」を一切省略せずに完全に統合した、決定版のコード（Ver 6.1）**を作成しました。
-
-**【復活・統合した機能】**
-*   自分の投稿の **「✏️編集」ボタン** と更新機能
-*   「さがす」画面のフィルターにおける **「💪部位検索」**
-*   募集画面の部位選択の **「肩・腕」**
-*   マイページと募集画面の **「全21種類のジムリスト」「全23区＋αのエリアリスト」**
-*   Ver 6.0で追加した「申し込み・承認フロー」「完了報告・レビュー」の全機能
-
-こちらをGitHubに上書きしていただければ、機能の欠落なくすべてが完璧に動作します。（一番下のAPIキーの貼り付けをお願いいたします）
-
-### 💻 JOINT TRAINING ver6.1（全機能・全選択肢 統合版）
-
-```html
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>JOINT TRAINING</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="image_2e8be5.jpg">
-
-  <style>
     /* 基本デザイン・UI */
     body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
     header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 18px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
@@ -123,40 +41,40 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 
-  <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js)"></script>
-  <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js)"></script>
-  <script src="[https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js)"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
 
   <header id="app-header">JOINT TRAINING</header>
 
   <div class="container">
-    
     <!-- 0. ログイン画面 -->
     <div id="screen-login" class="screen active">
       <div style="text-align: center; margin-top: 50px;">
         <img src="image_2e8be5.jpg" alt="LOGO" style="width: 150px; border-radius: 20px; margin-bottom: 30px;">
         <h2>本気の合トレマッチング</h2>
-        <button class="btn-primary" onclick="loginWithGoogle()" style="margin-top: 40px;">Googleでログインして始める</button>
+        <button class="btn-primary" onclick="loginWithGoogle()" style="margin-top: 40px;">Googleでログイン</button>
       </div>
     </div>
 
-    <!-- 1. さがす画面（タイムライン ＆ フィルター） -->
+    <!-- 1. さがす画面 -->
     <div id="screen-search" class="screen">
       <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
         <div class="section-title" style="margin-bottom: 10px;">🔍 条件で絞り込む</div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <input type="date" id="filter-date" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
-          <select id="filter-area" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
-            <option value="">全てのエリア</option>
-            <option value="千代田区">千代田区</option><option value="中央区">中央区</option><option value="港区">港区</option><option value="新宿区">新宿区</option><option value="文京区">文京区</option><option value="台東区">台東区</option><option value="墨田区">墨田区</option><option value="江東区">江東区</option><option value="品川区">品川区</option><option value="目黒区">目黒区</option><option value="大田区">大田区</option><option value="世田谷区">世田谷区</option><option value="渋谷区">渋谷区</option><option value="中野区">中野区</option><option value="杉並区">杉並区</option><option value="豊島区">豊島区</option><option value="北区">北区</option><option value="荒川区">荒川区</option><option value="板橋区">板橋区</option><option value="練馬区">練馬区</option><option value="足立区">足立区</option><option value="葛飾区">葛飾区</option><option value="江戸川区">江戸川区</option><option value="都下・その他">都下・その他</option>
-          </select>
+          <select id="filter-area" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;"><option value="">全てのエリア</option></select>
           <select id="filter-part" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
-            <option value="">全ての部位</option>
-            <option value="すべて">すべて</option><option value="胸">胸</option><option value="背中">背中</option><option value="脚">脚</option><option value="肩">肩</option><option value="腕">腕</option>
+            <option value="">全ての部位</option><option value="すべて">すべて</option><option value="胸">胸</option><option value="背中">背中</option><option value="脚">脚</option><option value="肩">肩</option><option value="腕">腕</option>
           </select>
-          <button class="btn-primary" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;" onclick="applyFilter()">検索</button>
+          <!-- 公開範囲フィルター（コミュニティ） -->
+          <select id="filter-scope" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
+            <option value="public">全体公開のみ</option>
+            <!-- 所属コミュニティがJSで追加されます -->
+          </select>
+          <button class="btn-primary" style="margin:0; width: 100%; padding: 10px; font-size: 13px;" onclick="applyFilter()">検索</button>
         </div>
       </div>
       <div id="posts-container"><p style="color: #888; text-align: center;">募集データを読み込み中...</p></div>
@@ -164,6 +82,15 @@
 
     <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
+      <!-- 公開範囲設定 -->
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">🌍 公開範囲</div>
+        <select id="post-scope-input" class="input-field">
+          <option value="public">全体に公開</option>
+          <!-- 所属コミュニティがJSで追加されます -->
+        </select>
+      </div>
+
       <div style="margin-bottom: 30px;">
         <div class="section-title">📝 募集メッセージ（任意）</div>
         <textarea id="post-description" class="input-field" placeholder="「脚トレ追い込み合える方募集！」など"></textarea>
@@ -176,9 +103,7 @@
       <div style="margin-bottom: 30px;">
         <div class="section-title">🏙️ エリア（複数追加可）</div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-          <select id="post-area-input" class="input-field" style="margin: 0;">
-            <option value="">選択してください</option><option value="千代田区">千代田区</option><option value="中央区">中央区</option><option value="港区">港区</option><option value="新宿区">新宿区</option><option value="文京区">文京区</option><option value="台東区">台東区</option><option value="墨田区">墨田区</option><option value="江東区">江東区</option><option value="品川区">品川区</option><option value="目黒区">目黒区</option><option value="大田区">大田区</option><option value="世田谷区">世田谷区</option><option value="渋谷区">渋谷区</option><option value="中野区">中野区</option><option value="杉並区">杉並区</option><option value="豊島区">豊島区</option><option value="北区">北区</option><option value="荒川区">荒川区</option><option value="板橋区">板橋区</option><option value="練馬区">練馬区</option><option value="足立区">足立区</option><option value="葛飾区">葛飾区</option><option value="江戸川区">江戸川区</option><option value="都下・その他">都下・その他</option>
-          </select>
+          <select id="post-area-input" class="input-field" style="margin: 0;"><option value="">選択してください</option></select>
           <button class="btn-secondary" style="margin: 0; width: 80px;" onclick="addPostArea()">追加</button>
         </div>
         <div id="selected-areas-container"></div>
@@ -186,9 +111,7 @@
       <div style="margin-bottom: 30px;">
         <div class="section-title">📍 開催ジム（複数追加可）</div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-          <select id="post-gym-input" class="input-field" style="margin: 0;">
-            <option value="">選択してください</option><option value="エニタイムフィットネス">エニタイムフィットネス</option><option value="FASTGYM24">FASTGYM24</option><option value="JOYFIT24">JOYFIT24</option><option value="FiT24">FiT24</option><option value="FIT PLACE24">FIT PLACE24</option><option value="FIT365">FIT365</option><option value="chocoZAP">chocoZAP</option><option value="LIFE FIT">LIFE FIT</option><option value="スポーツクラブルネサンス">スポーツクラブルネサンス</option><option value="コナミスポーツクラブ">コナミスポーツクラブ</option><option value="セントラルスポーツ">セントラルスポーツ</option><option value="ティップネス">ティップネス</option><option value="メガロス">メガロス</option><option value="ジェクサー">ジェクサー</option><option value="スポーツクラブNAS">スポーツクラブNAS</option><option value="Gold's Gym">Gold's Gym</option><option value="カーブス">カーブス</option><option value="Bodies">Bodies</option><option value="FURDI">FURDI</option><option value="公営ジムメイン">公営ジムメイン</option><option value="その他">その他</option>
-          </select>
+          <select id="post-gym-input" class="input-field" style="margin: 0;"><option value="">選択してください</option></select>
           <button class="btn-secondary" style="margin: 0; width: 80px;" onclick="addPostGym()">追加</button>
         </div>
         <div id="selected-gyms-container"></div>
@@ -200,8 +123,16 @@
       <button class="btn-primary" onclick="openConfirmModal()">内容を確認して公開</button>
     </div>
 
-    <!-- 3. メッセージ（進行中・フレンド）画面 -->
+    <!-- 3. メッセージ＆コミュニティ画面 -->
     <div id="screen-messages" class="screen">
+      
+      <!-- 🆕 コミュニティ -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="section-title" style="margin:0;">🏢 コミュニティ</div>
+        <button class="btn-secondary" style="margin:0; width:auto; padding: 4px 10px; font-size: 11px;" onclick="openCreateCommunityModal()">+ 作成</button>
+      </div>
+      <div id="communities-container" style="margin-bottom: 25px;"><p style="color:#888; font-size:12px;">所属しているコミュニティはありません。</p></div>
+
       <div class="section-title">🔍 ID検索でフレンド追加</div>
       <div style="display: flex; gap: 10px; margin-bottom: 25px;">
         <input type="text" id="search-uid" class="input-field" placeholder="相手のIDを入力" style="margin: 0;">
@@ -215,8 +146,11 @@
 
     <!-- 3-5. 個別チャット画面 -->
     <div id="screen-chat" class="screen">
-      <div id="chat-header-action" style="padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #333; display: none;">
-        <button class="btn-primary" style="margin: 0; background-color: #ffcc00; color: #000;" onclick="openReviewModal()">🏆 合トレ完了報告 ＆ レビュー</button>
+      <div id="chat-header-actions" style="padding-bottom: 10px; margin-bottom: 15px; border-bottom: 1px solid #333; display: flex; gap: 10px;">
+        <!-- 完了報告ボタン（マッチング中用） -->
+        <button id="btn-review" class="btn-primary" style="margin: 0; background-color: #ffcc00; color: #000; flex: 1; display: none;" onclick="openReviewModal()">🏆 合トレ完了報告</button>
+        <!-- 特命誘うボタン（通常のフレンド用） -->
+        <button id="btn-direct-invite" class="btn-secondary" style="margin: 0; flex: 1; display: none;" onclick="openDirectInviteModal()">🔥 特命合トレに誘う</button>
       </div>
       <div id="chat-messages" style="display: flex; flex-direction: column; padding-bottom: 20px;"></div>
       <div class="chat-input-area">
@@ -244,9 +178,7 @@
         <option value="">選択してください</option><option value="1年未満">1年未満</option><option value="1〜3年">1〜3年</option><option value="3〜5年">3〜5年</option><option value="5〜10年">5〜10年</option><option value="10年以上">10年以上</option>
       </select>
       <div class="section-title">メインの契約ジム</div>
-      <select id="profile-gyms" class="input-field">
-        <option value="">選択してください</option><option value="エニタイムフィットネス">エニタイムフィットネス</option><option value="FASTGYM24">FASTGYM24</option><option value="JOYFIT24">JOYFIT24</option><option value="FiT24">FiT24</option><option value="FIT PLACE24">FIT PLACE24</option><option value="FIT365">FIT365</option><option value="chocoZAP">chocoZAP</option><option value="LIFE FIT">LIFE FIT</option><option value="スポーツクラブルネサンス">スポーツクラブルネサンス</option><option value="コナミスポーツクラブ">コナミスポーツクラブ</option><option value="セントラルスポーツ">セントラルスポーツ</option><option value="ティップネス">ティップネス</option><option value="メガロス">メガロス</option><option value="ジェクサー">ジェクサー</option><option value="スポーツクラブNAS">スポーツクラブNAS</option><option value="Gold's Gym">Gold's Gym</option><option value="カーブス">カーブス</option><option value="Bodies">Bodies</option><option value="FURDI">FURDI</option><option value="公営ジムメイン">公営ジムメイン</option><option value="その他">その他</option>
-      </select>
+      <select id="profile-gyms" class="input-field"><option value="">選択してください</option></select>
       
       <button class="btn-primary" onclick="saveProfile()">プロフィールを保存</button>
       <button class="btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())" style="margin-bottom: 50px;">ログアウト</button>
@@ -266,7 +198,6 @@
   <div id="apply-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 style="margin-top: 0;">合トレを申し込む</h3>
-      <p style="font-size: 12px; color: #aaa;">希望の日程と場所を選択して申し込んでください。</p>
       <div class="section-title">📅 希望日を選択</div><select id="apply-date" class="input-field"></select>
       <div class="section-title">📍 希望場所を選択</div><select id="apply-place" class="input-field"></select>
       <button class="btn-primary" onclick="submitApply()">申し込む</button>
@@ -277,7 +208,6 @@
   <div id="review-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 style="margin-top: 0; color: #ffcc00;">🏆 合トレ完了報告</h3>
-      <p style="font-size: 13px; color: #ccc;">お疲れ様でした！相手の評価を選択してください。</p>
       <div class="section-title">⭐ 相手の評価</div>
       <select id="review-rating" class="input-field" style="font-size: 16px;">
         <option value="5">⭐⭐⭐⭐⭐ 最高だった！</option><option value="4">⭐⭐⭐⭐ 良かった</option><option value="3">⭐⭐⭐ 普通</option><option value="2">⭐⭐ イマイチ</option><option value="1">⭐ トラブルがあった</option>
@@ -287,6 +217,30 @@
       </label>
       <button class="btn-primary" onclick="submitReview()">評価を送信して完了</button>
       <button class="btn-secondary" onclick="closeModal('review-modal')">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- 🆕 特命合トレ誘いモーダル -->
+  <div id="direct-invite-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0; color: #ffcc00;">🔥 特命合トレに誘う</h3>
+      <p style="font-size: 12px; color: #ccc;">相手に直接合トレの申し込みを送ります。</p>
+      <div class="section-title">📅 提案する日程</div><input type="date" id="direct-date" class="input-field">
+      <div class="section-title">📍 提案する場所</div><select id="direct-place" class="input-field"><option value="">選択してください</option></select>
+      <button class="btn-primary" onclick="submitDirectInvite()">誘う</button>
+      <button class="btn-secondary" onclick="closeModal('direct-invite-modal')">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- 🆕 コミュニティ作成モーダル -->
+  <div id="create-community-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0;">コミュニティを作成</h3>
+      <input type="text" id="community-name" class="input-field" placeholder="コミュニティ名 (例: 代々木上原BIG3会)">
+      <div class="section-title">メンバーを追加 (フレンド一覧)</div>
+      <div id="community-friends-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px; font-size:14px; color:#fff;"></div>
+      <button class="btn-primary" onclick="submitCreateCommunity()">作成する</button>
+      <button class="btn-secondary" onclick="closeModal('create-community-modal')">キャンセル</button>
     </div>
   </div>
 
@@ -315,39 +269,46 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // エリアとジムのリスト（コード圧縮のためJSで自動生成）
+    const areaList = ["千代田区","中央区","港区","新宿区","文京区","台東区","墨田区","江東区","品川区","目黒区","大田区","世田谷区","渋谷区","中野区","杉並区","豊島区","北区","荒川区","板橋区","練馬区","足立区","葛飾区","江戸川区","都下・その他"];
+    const gymList = ["エニタイムフィットネス","FASTGYM24","JOYFIT24","FiT24","FIT PLACE24","FIT365","chocoZAP","LIFE FIT","スポーツクラブルネサンス","コナミスポーツクラブ","セントラルスポーツ","ティップネス","メガロス","ジェクサー","スポーツクラブNAS","Gold's Gym","カーブス","Bodies","FURDI","公営ジムメイン","その他"];
+    
+    window.onload = function() {
+      const areaHtml = areaList.map(a => `<option value="${a}">${a}</option>`).join('');
+      const gymHtml = gymList.map(g => `<option value="${g}">${g}</option>`).join('');
+      document.getElementById('filter-area').innerHTML += areaHtml;
+      document.getElementById('post-area-input').innerHTML += areaHtml;
+      document.getElementById('direct-place').innerHTML += areaHtml + gymHtml;
+      document.getElementById('post-gym-input').innerHTML += gymHtml;
+      document.getElementById('profile-gyms').innerHTML += gymHtml;
+    };
+
     function switchTab(screenId, headerTitle) {
       document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
       document.getElementById('app-header').innerText = headerTitle;
       const tabs = document.getElementById('bottom-tabs');
-      if(screenId === 'screen-chat' || screenId === 'screen-login') {
-        tabs.style.display = 'none';
-      } else {
-        tabs.style.display = 'flex';
-        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-        if(event && event.currentTarget.classList) event.currentTarget.classList.add('active');
-      }
+      if(screenId === 'screen-chat' || screenId === 'screen-login') tabs.style.display = 'none';
+      else { tabs.style.display = 'flex'; document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); if(event && event.currentTarget.classList) event.currentTarget.classList.add('active'); }
       window.scrollTo(0, 0);
     }
 
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-
-    function loginWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithRedirect(provider).catch(error => alert("エラー: " + error.message));
-    }
+    function loginWithGoogle() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).catch(e => alert("エラー: " + e.message)); }
 
     let myProfileData = {};
+    let myFriends = []; // フレンドIDリスト
+    let myCommunities = []; // 所属コミュニティ情報
+
     auth.onAuthStateChanged(user => {
       if (user) {
         document.getElementById('my-uid-display').innerText = user.uid;
         switchTab('screen-search', 'JOINT TRAINING');
         loadProfile(user.uid);
+        loadCommunities();
         applyFilter();
         loadMessagesAndRequests();
-      } else {
-        switchTab('screen-login', 'JOINT TRAINING');
-      }
+      } else switchTab('screen-login', 'JOINT TRAINING');
     });
 
     let currentProfileImage = null;
@@ -362,31 +323,29 @@
           if (w > h && w > MAX) { h *= MAX / w; w = MAX; } else if (h > MAX) { w *= MAX / h; h = MAX; }
           canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
           currentProfileImage = canvas.toDataURL('image/jpeg', 0.8);
-          document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-small" style="margin: 0 auto; width: 80px; height: 80px;">`;
+          document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-small" style="margin:0 auto; width:80px; height:80px;">`;
         };
         img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+      }; reader.readAsDataURL(file);
     }
 
     function loadProfile(uid) {
       db.collection("users").doc(uid).get().then(doc => {
         if (doc.exists) {
           myProfileData = doc.data();
+          myFriends = myProfileData.friends || [];
           document.getElementById('profile-name').value = myProfileData.name || auth.currentUser.displayName;
           document.getElementById('profile-bio').value = myProfileData.bio || "";
           document.getElementById('profile-history').value = myProfileData.history || "";
           document.getElementById('profile-gyms').value = myProfileData.gyms || "";
           if (myProfileData.photoURL) {
             currentProfileImage = myProfileData.photoURL;
-            document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-small" style="margin: 0 auto; width: 80px; height: 80px;">`;
+            document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-small" style="margin:0 auto; width:80px; height:80px;">`;
           }
           const mCount = myProfileData.matchCount || 0;
           let rAvg = 0; if(myProfileData.ratingCount > 0) rAvg = (myProfileData.ratingSum / myProfileData.ratingCount).toFixed(1);
           document.getElementById('mypage-stats').innerText = `🔥合トレ: ${mCount}回 ｜ ⭐評価: ${rAvg > 0 ? rAvg : '-'}`;
-        } else {
-          myProfileData = { name: auth.currentUser.displayName };
-        }
+        } else myProfileData = { name: auth.currentUser.displayName };
       });
     }
 
@@ -398,7 +357,34 @@
       }, { merge: true }).then(() => alert("保存しました！"));
     }
 
-    // === 募集機能 ＆ 編集（復活！） ===
+    // === コミュニティの読み込み ===
+    function loadCommunities() {
+      db.collection("communities").where("members", "array-contains", auth.currentUser.uid).onSnapshot(snap => {
+        myCommunities = [];
+        let filterHtml = `<option value="public">全体公開のみ</option><option value="all">すべて表示(コミュニティ含)</option>`;
+        let postHtml = `<option value="public">全体に公開</option>`;
+        const cContainer = document.getElementById('communities-container'); cContainer.innerHTML = "";
+        
+        if(snap.empty) { cContainer.innerHTML = "<p style='color:#888; font-size:12px;'>所属しているコミュニティはありません。</p>"; }
+        
+        snap.forEach(doc => {
+          const c = doc.data(); const cId = doc.id;
+          myCommunities.push(cId);
+          filterHtml += `<option value="${cId}">🏢 ${c.name}</option>`;
+          postHtml += `<option value="${cId}">🏢 ${c.name}のみ</option>`;
+          
+          cContainer.innerHTML += `
+            <div class="list-item" onclick="openChat('${cId}', '${c.name}', null, false, true)">
+              <div class="avatar-small" style="background:#2980b9;">🏢</div>
+              <div style="font-weight: bold;">${c.name} <span style="font-size:10px; color:#aaa;">(${c.members.length}人)</span></div>
+            </div>`;
+        });
+        document.getElementById('filter-scope').innerHTML = filterHtml;
+        document.getElementById('post-scope-input').innerHTML = postHtml;
+      });
+    }
+
+    // === 募集機能 ===
     let selectedDates = []; let selectedPostAreas = []; let selectedPostGyms = []; let editingPostId = null;
     function openPostTabNew() {
       editingPostId = null; document.getElementById('post-description').value = "";
@@ -407,27 +393,21 @@
       switchTab('screen-post', '募集を作成');
     }
     
-    // 【復活】自分の投稿を編集モードで開く
     function editMyPost(postId) {
       db.collection("posts").doc(postId).get().then(doc => {
         const post = doc.data(); editingPostId = postId;
+        document.getElementById('post-scope-input').value = post.scope || 'public';
         document.getElementById('post-description').value = post.description || "";
         selectedDates = post.dates || []; renderDates();
         selectedPostAreas = post.areas || []; renderPostAreas();
         selectedPostGyms = post.gyms || []; renderPostGyms();
-        
         document.querySelectorAll('.part-btn-item').forEach(el => el.classList.remove('selected'));
-        if(post.parts) {
-          document.querySelectorAll('.part-btn-item').forEach(el => {
-            if(post.parts.includes(el.innerText)) el.classList.add('selected');
-          });
-        }
+        if(post.parts) document.querySelectorAll('.part-btn-item').forEach(el => { if(post.parts.includes(el.innerText)) el.classList.add('selected'); });
         document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-item')[1].classList.add('active'); // 「募集」タブ
+        document.querySelectorAll('.tab-item')[1].classList.add('active');
         switchTab('screen-post', '募集を編集');
       });
     }
-    // 【復活】自分の投稿を削除
     function deleteMyPost(postId) { if(confirm("削除しますか？")) db.collection("posts").doc(postId).delete(); }
 
     function addDate() { const v = document.getElementById('post-date-input').value; if(v && !selectedDates.includes(v)) { selectedDates.push(v); renderDates(); } }
@@ -453,6 +433,7 @@
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
       const postData = {
         uid: u.uid, hostName: myProfileData.name || u.displayName, hostPhoto: myProfileData.photoURL || null,
+        scope: document.getElementById('post-scope-input').value, // 🆕 公開範囲
         description: document.getElementById('post-description').value,
         dates: selectedDates, areas: selectedPostAreas, gyms: selectedPostGyms, parts: parts,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -465,41 +446,42 @@
       }
     }
 
-    // === タイムライン表示 ＆ 申し込み ＆ フィルター（部位検索復活！） ===
-    let currentFilters = { date: "", area: "", part: "" };
+    // === タイムライン表示 ＆ 申し込み ===
     function applyFilter() {
-      currentFilters.date = document.getElementById('filter-date').value;
-      currentFilters.area = document.getElementById('filter-area').value;
-      currentFilters.part = document.getElementById('filter-part').value; // 【復活】
+      const fDate = document.getElementById('filter-date').value;
+      const fArea = document.getElementById('filter-area').value;
+      const fPart = document.getElementById('filter-part').value;
+      const fScope = document.getElementById('filter-scope').value;
       
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
-        const container = document.getElementById('posts-container');
-        container.innerHTML = ""; let count = 0;
+        const container = document.getElementById('posts-container'); container.innerHTML = ""; let count = 0;
         
         snap.forEach(doc => {
           const p = doc.data(); const pId = doc.id;
           
-          // フィルター判定
-          if (currentFilters.date && (!p.dates || !p.dates.includes(currentFilters.date))) return;
-          if (currentFilters.area && (!p.areas || !p.areas.includes(currentFilters.area))) return;
-          if (currentFilters.part && (!p.parts || (!p.parts.includes(currentFilters.part) && !p.parts.includes("すべて")))) return; // 【復活】
+          // 公開範囲の判定 (自分が属していないコミュニティの投稿は弾く)
+          if(p.scope && p.scope !== 'public' && !myCommunities.includes(p.scope) && p.uid !== auth.currentUser.uid) return;
+          // フィルター判定 (Scope)
+          if(fScope === 'public' && p.scope && p.scope !== 'public') return;
+          if(fScope !== 'public' && fScope !== 'all' && p.scope !== fScope) return;
+          
+          if (fDate && (!p.dates || !p.dates.includes(fDate))) return;
+          if (fArea && (!p.areas || !p.areas.includes(fArea))) return;
+          if (fPart && (!p.parts || (!p.parts.includes(fPart) && !p.parts.includes("すべて")))) return;
 
           count++;
-          const dText = p.dates ? p.dates.join(", ") : "未定";
-          const pText = p.areas.concat(p.gyms).join(", ");
+          const dText = p.dates ? p.dates.join(", ") : "未定"; const pText = p.areas.concat(p.gyms).join(", ");
           const avatarHtml = p.hostPhoto ? `<img src="${p.hostPhoto}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;border:2px solid #555;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;margin-right:15px;font-size:20px;font-weight:bold;">${p.hostName.charAt(0)}</div>`;
           const descHtml = p.description ? `<div style="background:#222; padding:12px; border-radius:8px; font-size:13px; margin:15px 0;">${p.description}</div>` : '';
+          const badgeHtml = (p.scope && p.scope !== 'public') ? `<span style="background:#2980b9; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-bottom:5px; display:inline-block;">🏢 コミュニティ限定</span><br>` : '';
 
-          // 【復活】自分の投稿の編集と削除
           let actionBtn = p.uid === auth.currentUser.uid 
-            ? `<div style="display: flex; gap: 10px; margin-top: 15px;">
-                 <button class="btn-secondary" style="flex: 1; padding: 10px; margin: 0; font-size: 13px;" onclick="editMyPost('${pId}')">✏️ 編集</button>
-                 <button class="btn-secondary" style="flex: 1; padding: 10px; margin: 0; font-size: 13px; border-color: #e74c3c; color: #e74c3c;" onclick="deleteMyPost('${pId}')">🗑 削除</button>
-               </div>`
+            ? `<div style="display: flex; gap: 10px; margin-top: 15px;"><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px;" onclick="editMyPost('${pId}')">✏️ 編集</button><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px; border-color:#e74c3c; color:#e74c3c;" onclick="deleteMyPost('${pId}')">🗑 削除</button></div>`
             : `<button class="btn-primary" style="padding: 12px; margin-top: 15px;" onclick="openApplyModal('${pId}', '${p.uid}', '${p.dates.join(',')}', '${pText}')">🚀 この合トレに申し込む</button>`;
 
           container.innerHTML += `
             <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+              ${badgeHtml}
               <div style="display: flex; align-items: center;">${avatarHtml}<h3 style="margin: 0;">${p.hostName}</h3></div>
               ${descHtml}
               <div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;">
@@ -526,11 +508,11 @@
         postId: applyData.postId, hostUid: applyData.hostUid, guestUid: u.uid,
         guestName: myProfileData.name || u.displayName, guestPhoto: myProfileData.photoURL || null,
         selectedDate: document.getElementById('apply-date').value, selectedPlace: document.getElementById('apply-place').value,
-        status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        status: 'pending', isDirect: false, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => { closeModal('apply-modal'); alert("申し込みを送信しました！"); });
     }
 
-    // === メッセージ画面 ＆ 合トレ完了報告フロー ===
+    // === メッセージ画面・特命合トレ・コミュニティ作成 ===
     function loadMessagesAndRequests() {
       const uid = auth.currentUser.uid;
       db.collection('requests').where('hostUid', '==', uid).where('status', '==', 'pending')
@@ -540,8 +522,10 @@
           snap.forEach(doc => {
             const req = doc.data(); const reqId = doc.id;
             const avatar = req.guestPhoto ? `<img src="${req.guestPhoto}" class="avatar-small" style="width:40px;height:40px;">` : `<div class="avatar-small" style="width:40px;height:40px;">${req.guestName.charAt(0)}</div>`;
+            const badge = req.isDirect ? `<span style="background:#ffcc00; color:#000; font-size:10px; padding:2px 4px; border-radius:4px; font-weight:bold;">🔥特命の誘い</span><br>` : '';
             container.innerHTML += `
               <div style="background: #222; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+                ${badge}
                 <div style="display:flex; align-items:center;">${avatar}<div style="font-weight:bold;">${req.guestName} さん</div></div>
                 <div style="font-size:12px; color:#ccc; margin-top:8px;">希望: ${req.selectedDate} / ${req.selectedPlace}</div>
                 <button class="btn-primary" style="padding: 8px; margin-top: 10px; font-size:13px;" onclick="approveRequest('${reqId}')">承認してチャットを開始</button>
@@ -565,7 +549,7 @@
                 const pName = pDoc.data()?.name || "名称未設定";
                 const avatar = pDoc.data()?.photoURL ? `<img src="${pDoc.data().photoURL}" class="avatar-small">` : `<div class="avatar-small">${pName.charAt(0)}</div>`;
                 container.innerHTML += `
-                  <div class="list-item" onclick="openChat('${reqId}', '${pName}', '${partnerUid}', true)">
+                  <div class="list-item" onclick="openChat('${reqId}', '${pName}', '${partnerUid}', true, false)">
                     ${avatar}<div><div style="font-weight: bold;">${pName} <span style="font-size:10px; background:#e74c3c; padding:2px 6px; border-radius:4px;">進行中</span></div>
                     <div style="font-size: 12px; color: #888;">予定: ${req.selectedDate} / ${req.selectedPlace}</div></div>
                   </div>`;
@@ -577,10 +561,10 @@
               const fName = fDoc.data()?.name || "名称未設定";
               const avatar = fDoc.data()?.photoURL ? `<img src="${fDoc.data().photoURL}" class="avatar-small">` : `<div class="avatar-small">${fName.charAt(0)}</div>`;
               const chatId = [uid, fUid].sort().join('_');
-              container.innerHTML += `<div class="list-item" onclick="openChat('${chatId}', '${fName}', '${fUid}', false)">${avatar}<div style="font-weight: bold;">${fName}</div></div>`;
+              container.innerHTML += `<div class="list-item" onclick="openChat('${chatId}', '${fName}', '${fUid}', false, false)">${avatar}<div style="font-weight: bold;">${fName}</div></div>`;
             });
           });
-          if(matchingCount === 0 && friends.length === 0) container.innerHTML = "<p style='color:#888; font-size:12px;'>進行中の合トレやフレンドはいません。</p>";
+          if(matchingCount === 0 && friends.length === 0) container.innerHTML = "<p style='color:#888; font-size:12px;'>進行中やフレンドはいません。</p>";
         });
       });
     }
@@ -591,18 +575,46 @@
       }
     }
 
+    // 🆕 コミュニティ作成
+    function openCreateCommunityModal() {
+      if(myFriends.length === 0) return alert("コミュニティに招待できるフレンドがいません。まずはフレンドを追加してください。");
+      const listDiv = document.getElementById('community-friends-list'); listDiv.innerHTML = "";
+      myFriends.forEach(fUid => {
+        db.collection('users').doc(fUid).get().then(doc => {
+          listDiv.innerHTML += `<label style="display:block; margin-bottom:8px;"><input type="checkbox" value="${fUid}" class="comm-member-chk"> ${doc.data()?.name || '不明'}</label>`;
+        });
+      });
+      document.getElementById('create-community-modal').style.display = 'flex';
+    }
+    function submitCreateCommunity() {
+      const name = document.getElementById('community-name').value.trim();
+      const checks = document.querySelectorAll('.comm-member-chk:checked');
+      if(!name) return alert("名前を入力してください");
+      const members = [auth.currentUser.uid];
+      checks.forEach(c => members.push(c.value));
+      db.collection("communities").add({ name: name, members: members, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+        closeModal('create-community-modal'); alert("コミュニティを作成しました！");
+      });
+    }
+
+    // チャット画面
     let currentChatId = null; let currentPartnerUid = null; let currentReqId = null; let chatUnsubscribe = null;
-    function openChat(chatId, partnerName, partnerUid, isMatching) {
+    function openChat(chatId, partnerName, partnerUid, isMatching, isCommunity) {
       currentChatId = chatId; currentPartnerUid = partnerUid; currentReqId = isMatching ? chatId : null;
-      document.getElementById('chat-header-action').style.display = isMatching ? 'block' : 'none';
+      document.getElementById('btn-review').style.display = isMatching ? 'block' : 'none';
+      document.getElementById('btn-direct-invite').style.display = (!isMatching && !isCommunity && partnerUid) ? 'block' : 'none';
+      
       switchTab('screen-chat', partnerName);
       if(chatUnsubscribe) chatUnsubscribe();
-      chatUnsubscribe = db.collection("chats").doc(chatId).collection("messages").orderBy("createdAt", "asc").onSnapshot(snap => {
+      
+      const coll = isCommunity ? db.collection("communities").doc(chatId).collection("messages") : db.collection("chats").doc(chatId).collection("messages");
+      chatUnsubscribe = coll.orderBy("createdAt", "asc").onSnapshot(snap => {
         const msgBox = document.getElementById('chat-messages'); msgBox.innerHTML = "";
         snap.forEach(doc => {
           const msg = doc.data(); const isMe = msg.sender === auth.currentUser.uid;
           const align = isMe ? "flex-end" : "flex-start"; const bubbleClass = isMe ? "chat-me" : "chat-friend";
-          msgBox.innerHTML += `<div style="display: flex; justify-content: ${align}; width: 100%;"><div class="chat-bubble ${bubbleClass}">${msg.text}</div></div>`;
+          const senderNameHtml = (isCommunity && !isMe && msg.senderName) ? `<div style="font-size:10px; color:#888; margin-bottom:2px;">${msg.senderName}</div>` : '';
+          msgBox.innerHTML += `<div style="display: flex; flex-direction: column; align-items: ${align}; width: 100%; margin-bottom: 5px;">${senderNameHtml}<div class="chat-bubble ${bubbleClass}" style="margin-bottom:0;">${msg.text}</div></div>`;
         });
         window.scrollTo(0, document.body.scrollHeight);
       });
@@ -615,9 +627,29 @@
 
     function sendMessage() {
       const text = document.getElementById('chat-text').value.trim(); if(!text || !currentChatId) return;
-      db.collection("chats").doc(currentChatId).collection("messages").add({ sender: auth.currentUser.uid, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => document.getElementById('chat-text').value = "");
+      const isCommunity = !currentPartnerUid; // partnerUidが無い場合はコミュニティ
+      const coll = isCommunity ? db.collection("communities").doc(currentChatId).collection("messages") : db.collection("chats").doc(currentChatId).collection("messages");
+      
+      coll.add({ sender: auth.currentUser.uid, senderName: myProfileData.name, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => document.getElementById('chat-text').value = "");
     }
 
+    // 🆕 特命合トレ誘い機能
+    function openDirectInviteModal() { document.getElementById('direct-invite-modal').style.display = 'flex'; }
+    function submitDirectInvite() {
+      const u = auth.currentUser;
+      const date = document.getElementById('direct-date').value;
+      const place = document.getElementById('direct-place').value;
+      if(!date || !place) return alert("日時と場所を指定してください");
+      
+      db.collection('requests').add({
+        postId: 'direct_invite', hostUid: currentPartnerUid, guestUid: u.uid, // hostが誘われた側になる（承認権限を持つ）
+        guestName: myProfileData.name || u.displayName, guestPhoto: myProfileData.photoURL || null,
+        selectedDate: date, selectedPlace: place,
+        status: 'pending', isDirect: true, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => { closeModal('direct-invite-modal'); alert("特命の誘いを送信しました！"); });
+    }
+
+    // レビュー機能
     function openReviewModal() { document.getElementById('review-modal').style.display = 'flex'; }
     function submitReview() {
       const rating = parseInt(document.getElementById('review-rating').value);
