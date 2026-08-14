@@ -11,7 +11,6 @@
   <style>
     /* 基本デザイン・UI */
     body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0; padding-bottom: 100px; -webkit-tap-highlight-color: transparent; }
-    header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 18px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
     .container { max-width: 480px; margin: 0 auto; padding: 20px; }
     .section-title { color: #888; font-size: 13px; font-weight: bold; margin-bottom: 10px; }
     .btn-primary { background-color: #ffffff; color: #000000; border: none; padding: 14px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; }
@@ -24,21 +23,25 @@
     /* モーダル・リスト・チャット */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 200; justify-content: center; align-items: center; }
     .modal-content { background-color: #161616; border: 1px solid #333; padding: 20px; border-radius: 12px; width: 85%; max-width: 350px; }
-    .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
+    .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; position: relative; }
     .avatar-small { width: 45px; height: 45px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; object-fit: cover; }
     .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; margin-bottom: 10px; font-size: 14px; line-height: 1.5; display: inline-block; word-wrap: break-word; }
     .chat-me { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
     .chat-friend { background-color: #333333; color: #ffffff; border-bottom-left-radius: 4px; }
     .chat-input-area { position: fixed; bottom: 0; left: 0; width: 100%; background: #111; padding: 15px; box-sizing: border-box; border-top: 1px solid #333; display: flex; gap: 10px; z-index: 150; padding-bottom: env(safe-area-inset-bottom, 15px); }
-
-    /* タブバー・画面 */
+    
+    /* タブバー・画面・未読バッジ */
     .tab-bar { position: fixed; bottom: 20px; left: 5%; width: 90%; background-color: rgba(17, 17, 17, 0.95); border: 1px solid #333; border-radius: 20px; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
     .tab-item.active { color: #ffffff; }
     .tab-item svg { width: 22px; height: 22px; stroke: currentColor; stroke-width: 2; fill: none; }
     .screen { display: none; animation: fadeIn 0.3s; }
     .screen.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* 通知バッジ */
+    .badge { background: #e74c3c; color: #fff; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 10px; position: absolute; top: -5px; right: 15%; display: none; }
+    .unread-dot { background: #e74c3c; width: 10px; height: 10px; border-radius: 50%; display: none; margin-left: auto; }
   </style>
 
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -47,7 +50,11 @@
 </head>
 <body>
 
-  <header id="app-header">JOINT TRAINING</header>
+  <!-- 左上に戻るボタンを配置したヘッダー -->
+  <header style="background-color: #111111; color: #ffffff; padding: 18px 0; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: center; height: 24px;">
+    <div id="header-back" style="position: absolute; left: 10px; font-size: 14px; font-weight: bold; cursor: pointer; display: none; color: #ffcc00; padding: 5px;" onclick="closeChat()">＜ 戻る</div>
+    <div id="app-header" style="font-size: 18px; font-weight: 900; letter-spacing: 2px;">JOINT TRAINING</div>
+  </header>
 
   <div class="container">
     <!-- 0. ログイン画面 -->
@@ -66,8 +73,11 @@
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <input type="date" id="filter-date" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
           <select id="filter-area" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;"><option value="">全てのエリア</option></select>
-          <select id="filter-part" class="input-field" style="margin:0; width: 100%; padding: 10px; font-size: 13px;">
+          <select id="filter-part" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
             <option value="">全ての部位</option><option value="すべて">すべて</option><option value="胸">胸</option><option value="背中">背中</option><option value="脚">脚</option><option value="肩">肩</option><option value="腕">腕</option>
+          </select>
+          <select id="filter-scope" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
+            <option value="public">全体公開のみ</option>
           </select>
           <button class="btn-primary" style="margin:0; width: 100%; padding: 10px; font-size: 13px;" onclick="applyFilter()">検索</button>
         </div>
@@ -77,6 +87,10 @@
 
     <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">🌍 公開範囲</div>
+        <select id="post-scope-input" class="input-field"><option value="public">全体に公開</option></select>
+      </div>
       <div style="margin-bottom: 30px;">
         <div class="section-title">📝 募集メッセージ（任意）</div>
         <textarea id="post-description" class="input-field" placeholder="「脚トレ追い込み合える方募集！」など"></textarea>
@@ -106,7 +120,7 @@
         <div class="section-title">💪 メイン部位</div>
         <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">すべて</div><div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">胸</div><div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">背中</div><div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">脚</div><div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">肩</div><div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">腕</div>
       </div>
-      <button class="btn-primary" onclick="openConfirmModal()">内容を確認して全体に公開</button>
+      <button class="btn-primary" onclick="openConfirmModal()">内容を確認して公開</button>
     </div>
 
     <!-- 3. メッセージ＆コミュニティ画面 -->
@@ -138,7 +152,7 @@
       </div>
       <div id="chat-messages" style="display: flex; flex-direction: column; padding-bottom: 20px;"></div>
       <div class="chat-input-area">
-        <button class="btn-secondary" style="width: 50px; margin: 0; padding: 10px;" onclick="closeChat()">戻る</button>
+        <!-- 戻るボタンはヘッダーに移動したため、入力欄を広くしました -->
         <input type="text" id="chat-text" class="input-field" placeholder="メッセージ..." style="margin: 0;">
         <button class="btn-primary" style="width: 70px; margin: 0; padding: 10px;" onclick="sendMessage()">送信</button>
       </div>
@@ -237,7 +251,6 @@
   <div id="community-invite-modal" class="modal-overlay">
     <div class="modal-content">
       <h3 style="margin-top: 0; color: #ffcc00;">🔥 コミュニティで募集</h3>
-      <p style="font-size: 12px; color: #ccc;">このコミュニティ内に合トレの募集を流します。</p>
       <div class="section-title">📅 日程</div><input type="date" id="comm-invite-date" class="input-field">
       <div class="section-title">📍 場所</div><select id="comm-invite-place" class="input-field"><option value="">選択してください</option></select>
       <div class="section-title">💬 メッセージ（任意）</div><input type="text" id="comm-invite-text" class="input-field" placeholder="一言どうぞ！">
@@ -250,7 +263,12 @@
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
     <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>さがす</div>
     <div class="tab-item" onclick="openPostTabNew()"><svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>募集</div>
-    <div class="tab-item" onclick="switchTab('screen-messages', 'メッセージ')"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>メッセージ</div>
+    
+    <div class="tab-item" onclick="switchTab('screen-messages', 'メッセージ')">
+      <div id="msg-badge-total" class="badge">0</div>
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>メッセージ
+    </div>
+    
     <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>マイページ</div>
   </div>
 
@@ -285,15 +303,39 @@
       document.getElementById('profile-gyms').innerHTML += gymHtml;
     };
 
+    // 未読管理
+    let unreadMap = {};
+    function updateUnread(key, count) {
+      unreadMap[key] = count;
+      const total = Object.values(unreadMap).reduce((a,b)=>a+b, 0);
+      const badge = document.getElementById('msg-badge-total');
+      if(total > 0) { badge.innerText = total; badge.style.display = 'block'; }
+      else { badge.style.display = 'none'; }
+    }
+
     function switchTab(screenId, headerTitle) {
       document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
       document.getElementById('app-header').innerText = headerTitle;
+      
       const tabs = document.getElementById('bottom-tabs');
-      if(screenId === 'screen-chat' || screenId === 'screen-login') tabs.style.display = 'none';
-      else { tabs.style.display = 'flex'; document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); if(event && event.currentTarget.classList) event.currentTarget.classList.add('active'); }
+      const backBtn = document.getElementById('header-back');
+      
+      if(screenId === 'screen-chat') {
+        tabs.style.display = 'none';
+        backBtn.style.display = 'block'; // チャット画面の時だけ戻るボタンを表示
+      } else if(screenId === 'screen-login') {
+        tabs.style.display = 'none';
+        backBtn.style.display = 'none';
+      } else {
+        tabs.style.display = 'flex';
+        backBtn.style.display = 'none';
+        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+        if(event && event.currentTarget && event.currentTarget.classList) event.currentTarget.classList.add('active');
+      }
       window.scrollTo(0, 0);
     }
+    
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
     function loginWithGoogle() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).catch(e => alert("エラー: " + e.message)); }
 
@@ -333,8 +375,7 @@
     function loadProfile(uid) {
       db.collection("users").doc(uid).get().then(doc => {
         if (doc.exists) {
-          myProfileData = doc.data();
-          myFriends = myProfileData.friends || [];
+          myProfileData = doc.data(); myFriends = myProfileData.friends || [];
           document.getElementById('profile-name').value = myProfileData.name || auth.currentUser.displayName;
           document.getElementById('profile-bio').value = myProfileData.bio || "";
           document.getElementById('profile-history').value = myProfileData.history || "";
@@ -343,8 +384,7 @@
             currentProfileImage = myProfileData.photoURL;
             document.getElementById('avatar-container').innerHTML = `<img src="${currentProfileImage}" class="avatar-small" style="margin:0 auto; width:80px; height:80px;">`;
           }
-          const mCount = myProfileData.matchCount || 0;
-          let rAvg = 0; if(myProfileData.ratingCount > 0) rAvg = (myProfileData.ratingSum / myProfileData.ratingCount).toFixed(1);
+          const mCount = myProfileData.matchCount || 0; let rAvg = 0; if(myProfileData.ratingCount > 0) rAvg = (myProfileData.ratingSum / myProfileData.ratingCount).toFixed(1);
           document.getElementById('mypage-stats').innerText = `🔥合トレ: ${mCount}回 ｜ ⭐評価: ${rAvg > 0 ? rAvg : '-'}`;
         } else myProfileData = { name: auth.currentUser.displayName };
       });
@@ -358,25 +398,44 @@
       }, { merge: true }).then(() => alert("保存しました！"));
     }
 
+    // === コミュニティ ===
     function loadCommunities() {
       db.collection("communities").where("members", "array-contains", auth.currentUser.uid).onSnapshot(snap => {
         myCommunities = [];
+        let filterHtml = `<option value="public">全体公開のみ</option><option value="all">すべて表示(コミュニティ含)</option>`;
+        let postHtml = `<option value="public">全体に公開</option>`;
         const cContainer = document.getElementById('communities-container'); cContainer.innerHTML = "";
+        
         if(snap.empty) { cContainer.innerHTML = "<p style='color:#888; font-size:12px;'>所属しているコミュニティはありません。</p>"; }
         
         snap.forEach(doc => {
-          const c = doc.data(); const cId = doc.id;
-          myCommunities.push(cId);
+          const c = doc.data(); const cId = doc.id; myCommunities.push(cId);
+          filterHtml += `<option value="${cId}">🏢 ${c.name}</option>`;
+          postHtml += `<option value="${cId}">🏢 ${c.name}のみ</option>`;
+          
           cContainer.innerHTML += `
             <div class="list-item" onclick="openChat('${cId}', '${c.name}', null, false, true)">
               <div class="avatar-small" style="background:#2980b9;">🏢</div>
-              <div style="font-weight: bold;">${c.name} <span style="font-size:10px; color:#aaa;">(${c.members.length}人)</span></div>
+              <div style="flex:1;">
+                <div style="font-weight: bold;">${c.name} <span style="font-size:10px; color:#aaa;">(${c.members.length}人)</span></div>
+              </div>
+              <div id="unread_${cId}" class="unread-dot"></div>
             </div>`;
+            
+          // コミュニティの未読監視
+          const lastRead = localStorage.getItem('read_' + cId) || 0;
+          if(c.updatedAt && c.updatedAt.toMillis() > lastRead) {
+            updateUnread(cId, 1);
+            const dot = document.getElementById(`unread_${cId}`); if(dot) dot.style.display = 'block';
+          } else {
+            updateUnread(cId, 0);
+          }
         });
+        document.getElementById('filter-scope').innerHTML = filterHtml; document.getElementById('post-scope-input').innerHTML = postHtml;
       });
     }
 
-    // === 募集機能 ＆ 編集（全体公開のみ） ===
+    // === 募集機能 ＆ 編集 ===
     let selectedDates = []; let selectedPostAreas = []; let selectedPostGyms = []; let editingPostId = null;
     function openPostTabNew() {
       editingPostId = null; document.getElementById('post-description').value = "";
@@ -387,14 +446,12 @@
     function editMyPost(postId) {
       db.collection("posts").doc(postId).get().then(doc => {
         const post = doc.data(); editingPostId = postId;
+        document.getElementById('post-scope-input').value = post.scope || 'public';
         document.getElementById('post-description').value = post.description || "";
-        selectedDates = post.dates || []; renderDates();
-        selectedPostAreas = post.areas || []; renderPostAreas();
-        selectedPostGyms = post.gyms || []; renderPostGyms();
+        selectedDates = post.dates || []; renderDates(); selectedPostAreas = post.areas || []; renderPostAreas(); selectedPostGyms = post.gyms || []; renderPostGyms();
         document.querySelectorAll('.part-btn-item').forEach(el => el.classList.remove('selected'));
         if(post.parts) document.querySelectorAll('.part-btn-item').forEach(el => { if(post.parts.includes(el.innerText)) el.classList.add('selected'); });
-        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-item')[1].classList.add('active'); 
+        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); document.querySelectorAll('.tab-item')[1].classList.add('active'); 
         switchTab('screen-post', '募集を編集');
       });
     }
@@ -423,7 +480,7 @@
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
       const postData = {
         uid: u.uid, hostName: myProfileData.name || u.displayName, hostPhoto: myProfileData.photoURL || null,
-        description: document.getElementById('post-description').value,
+        scope: document.getElementById('post-scope-input').value, description: document.getElementById('post-description').value,
         dates: selectedDates, areas: selectedPostAreas, gyms: selectedPostGyms, parts: parts,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -436,14 +493,15 @@
     }
 
     function applyFilter() {
-      const fDate = document.getElementById('filter-date').value;
-      const fArea = document.getElementById('filter-area').value;
-      const fPart = document.getElementById('filter-part').value;
-      
+      const fDate = document.getElementById('filter-date').value; const fArea = document.getElementById('filter-area').value;
+      const fPart = document.getElementById('filter-part').value; const fScope = document.getElementById('filter-scope').value;
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
         const container = document.getElementById('posts-container'); container.innerHTML = ""; let count = 0;
         snap.forEach(doc => {
           const p = doc.data(); const pId = doc.id;
+          if(p.scope && p.scope !== 'public' && !myCommunities.includes(p.scope) && p.uid !== auth.currentUser.uid) return;
+          if(fScope === 'public' && p.scope && p.scope !== 'public') return;
+          if(fScope !== 'public' && fScope !== 'all' && p.scope !== fScope) return;
           if (fDate && (!p.dates || !p.dates.includes(fDate))) return;
           if (fArea && (!p.areas || !p.areas.includes(fArea))) return;
           if (fPart && (!p.parts || (!p.parts.includes(fPart) && !p.parts.includes("すべて")))) return;
@@ -452,19 +510,13 @@
           const dText = p.dates ? p.dates.join(", ") : "未定"; const pText = p.areas.concat(p.gyms).join(", ");
           const avatarHtml = p.hostPhoto ? `<img src="${p.hostPhoto}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;border:2px solid #555;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;margin-right:15px;font-size:20px;font-weight:bold;">${p.hostName.charAt(0)}</div>`;
           const descHtml = p.description ? `<div style="background:#222; padding:12px; border-radius:8px; font-size:13px; margin:15px 0;">${p.description}</div>` : '';
+          const badgeHtml = (p.scope && p.scope !== 'public') ? `<span style="background:#2980b9; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-bottom:5px; display:inline-block;">🏢 コミュニティ限定</span><br>` : '';
+
           let actionBtn = p.uid === auth.currentUser.uid 
             ? `<div style="display: flex; gap: 10px; margin-top: 15px;"><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px;" onclick="editMyPost('${pId}')">✏️ 編集</button><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px; border-color:#e74c3c; color:#e74c3c;" onclick="deleteMyPost('${pId}')">🗑 削除</button></div>`
             : `<button class="btn-primary" style="padding: 12px; margin-top: 15px;" onclick="openApplyModal('${pId}', '${p.uid}', '${p.dates.join(',')}', '${pText}')">🚀 この合トレに申し込む</button>`;
 
-          container.innerHTML += `
-            <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-              <div style="display: flex; align-items: center;">${avatarHtml}<h3 style="margin: 0;">${p.hostName}</h3></div>
-              ${descHtml}
-              <div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;">
-                <div>📅 ${dText}</div><div>📍 ${pText}</div><div>💪 ${p.parts ? p.parts.join('・') : ''}</div>
-              </div>
-              ${actionBtn}
-            </div>`;
+          container.innerHTML += `<div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">${badgeHtml}<div style="display: flex; align-items: center;">${avatarHtml}<h3 style="margin: 0;">${p.hostName}</h3></div>${descHtml}<div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;"><div>📅 ${dText}</div><div>📍 ${pText}</div><div>💪 ${p.parts ? p.parts.join('・') : ''}</div></div>${actionBtn}</div>`;
         });
         if(count === 0) container.innerHTML = "<p style='text-align:center;'>条件に合う募集がありません。</p>";
       });
@@ -488,23 +540,22 @@
       }).then(() => { closeModal('apply-modal'); alert("申し込みを送信しました！"); });
     }
 
+    // === メッセージ画面・未読・特命合トレ ===
     function loadMessagesAndRequests() {
       const uid = auth.currentUser.uid;
-      db.collection('requests').where('hostUid', '==', uid).where('status', '==', 'pending')
-        .onSnapshot(snap => {
+      
+      // 届いた申し込みの未読
+      db.collection('requests').where('hostUid', '==', uid).where('status', '==', 'pending').onSnapshot(snap => {
           const container = document.getElementById('pending-requests-container'); container.innerHTML = "";
-          if(snap.empty) { container.innerHTML = "<p style='color:#888; font-size:12px;'>届いている申し込みはありません。</p>"; return; }
+          if(snap.empty) { container.innerHTML = "<p style='color:#888; font-size:12px;'>届いている申し込みはありません。</p>"; updateUnread('requests', 0); return; }
+          
+          updateUnread('requests', snap.size);
+          
           snap.forEach(doc => {
             const req = doc.data(); const reqId = doc.id;
             const avatar = req.guestPhoto ? `<img src="${req.guestPhoto}" class="avatar-small" style="width:40px;height:40px;">` : `<div class="avatar-small" style="width:40px;height:40px;">${req.guestName.charAt(0)}</div>`;
             const badge = req.isDirect ? `<span style="background:#ffcc00; color:#000; font-size:10px; padding:2px 4px; border-radius:4px; font-weight:bold;">🔥特命の誘い</span><br>` : '';
-            container.innerHTML += `
-              <div style="background: #222; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
-                ${badge}
-                <div style="display:flex; align-items:center;">${avatar}<div style="font-weight:bold;">${req.guestName} さん</div></div>
-                <div style="font-size:12px; color:#ccc; margin-top:8px;">希望: ${req.selectedDate} / ${req.selectedPlace}</div>
-                <button class="btn-primary" style="padding: 8px; margin-top: 10px; font-size:13px;" onclick="approveRequest('${reqId}')">承認してチャットを開始</button>
-              </div>`;
+            container.innerHTML += `<div style="background: #222; border-radius: 8px; padding: 12px; margin-bottom: 10px;">${badge}<div style="display:flex; align-items:center;">${avatar}<div style="font-weight:bold;">${req.guestName} さん</div></div><div style="font-size:12px; color:#ccc; margin-top:8px;">希望: ${req.selectedDate} / ${req.selectedPlace}</div><button class="btn-primary" style="padding: 8px; margin-top: 10px; font-size:13px;" onclick="approveRequest('${reqId}')">承認してチャットを開始</button></div>`;
           });
         });
 
@@ -523,20 +574,44 @@
               db.collection('users').doc(partnerUid).get().then(pDoc => {
                 const pName = pDoc.data()?.name || "名称未設定";
                 const avatar = pDoc.data()?.photoURL ? `<img src="${pDoc.data().photoURL}" class="avatar-small">` : `<div class="avatar-small">${pName.charAt(0)}</div>`;
+                
                 container.innerHTML += `
                   <div class="list-item" onclick="openChat('${reqId}', '${pName}', '${partnerUid}', true, false)">
-                    ${avatar}<div><div style="font-weight: bold;">${pName} <span style="font-size:10px; background:#e74c3c; padding:2px 6px; border-radius:4px;">進行中</span></div>
+                    ${avatar}<div style="flex:1;"><div style="font-weight: bold;">${pName} <span style="font-size:10px; background:#e74c3c; padding:2px 6px; border-radius:4px;">進行中</span></div>
                     <div style="font-size: 12px; color: #888;">予定: ${req.selectedDate} / ${req.selectedPlace}</div></div>
+                    <div id="unread_${reqId}" class="unread-dot"></div>
                   </div>`;
+                  
+                // 未読判定
+                db.collection("chats").doc(reqId).onSnapshot(cDoc => {
+                  const cData = cDoc.data(); const lastRead = localStorage.getItem('read_' + reqId) || 0;
+                  if(cData && cData.updatedAt && cData.updatedAt.toMillis() > lastRead) {
+                    updateUnread(reqId, 1); const dot = document.getElementById(`unread_${reqId}`); if(dot) dot.style.display = 'block';
+                  } else { updateUnread(reqId, 0); }
+                });
               });
             });
           });
+          
           friends.forEach(fUid => {
             db.collection('users').doc(fUid).get().then(fDoc => {
               const fName = fDoc.data()?.name || "名称未設定";
               const avatar = fDoc.data()?.photoURL ? `<img src="${fDoc.data().photoURL}" class="avatar-small">` : `<div class="avatar-small">${fName.charAt(0)}</div>`;
               const chatId = [uid, fUid].sort().join('_');
-              container.innerHTML += `<div class="list-item" onclick="openChat('${chatId}', '${fName}', '${fUid}', false, false)">${avatar}<div style="font-weight: bold;">${fName}</div></div>`;
+              
+              container.innerHTML += `
+                <div class="list-item" onclick="openChat('${chatId}', '${fName}', '${fUid}', false, false)">
+                  ${avatar}<div style="flex:1; font-weight: bold;">${fName}</div>
+                  <div id="unread_${chatId}" class="unread-dot"></div>
+                </div>`;
+                
+              // 未読判定
+              db.collection("chats").doc(chatId).onSnapshot(cDoc => {
+                const cData = cDoc.data(); const lastRead = localStorage.getItem('read_' + chatId) || 0;
+                if(cData && cData.updatedAt && cData.updatedAt.toMillis() > lastRead) {
+                  updateUnread(chatId, 1); const dot = document.getElementById(`unread_${chatId}`); if(dot) dot.style.display = 'block';
+                } else { updateUnread(chatId, 0); }
+              });
             });
           });
           if(matchingCount === 0 && friends.length === 0) container.innerHTML = "<p style='color:#888; font-size:12px;'>進行中やフレンドはいません。</p>";
@@ -552,23 +627,18 @@
 
     // === コミュニティ作成・編集 ===
     function openCreateCommunityModal() {
-      if(myFriends.length === 0) return alert("コミュニティに招待できるフレンドがいません。まずはフレンドを追加してください。");
+      if(myFriends.length === 0) return alert("まずはフレンドを追加してください。");
       const listDiv = document.getElementById('community-friends-list'); listDiv.innerHTML = "";
       myFriends.forEach(fUid => {
-        db.collection('users').doc(fUid).get().then(doc => {
-          listDiv.innerHTML += `<label style="display:block; margin-bottom:8px;"><input type="checkbox" value="${fUid}" class="comm-member-chk"> ${doc.data()?.name || '不明'}</label>`;
-        });
+        db.collection('users').doc(fUid).get().then(doc => { listDiv.innerHTML += `<label style="display:block; margin-bottom:8px;"><input type="checkbox" value="${fUid}" class="comm-member-chk"> ${doc.data()?.name || '不明'}</label>`; });
       });
       document.getElementById('create-community-modal').style.display = 'flex';
     }
     function submitCreateCommunity() {
-      const name = document.getElementById('community-name').value.trim();
-      const checks = document.querySelectorAll('.comm-member-chk:checked');
+      const name = document.getElementById('community-name').value.trim(); const checks = document.querySelectorAll('.comm-member-chk:checked');
       if(!name) return alert("名前を入力してください");
       const members = [auth.currentUser.uid]; checks.forEach(c => members.push(c.value));
-      db.collection("communities").add({ name: name, members: members, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
-        closeModal('create-community-modal'); alert("コミュニティを作成しました！");
-      });
+      db.collection("communities").add({ name: name, members: members, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { closeModal('create-community-modal'); alert("作成しました！"); });
     }
 
     function openEditCommunityModal() {
@@ -576,25 +646,19 @@
         const c = doc.data(); document.getElementById('edit-community-name').value = c.name;
         const listDiv = document.getElementById('edit-community-friends-list'); listDiv.innerHTML = "";
         myFriends.forEach(fUid => {
-          db.collection('users').doc(fUid).get().then(uDoc => {
-            const checked = c.members.includes(fUid) ? "checked" : "";
-            listDiv.innerHTML += `<label style="display:block; margin-bottom:8px;"><input type="checkbox" value="${fUid}" class="edit-comm-chk" ${checked}> ${uDoc.data()?.name || '不明'}</label>`;
-          });
+          db.collection('users').doc(fUid).get().then(uDoc => { const checked = c.members.includes(fUid) ? "checked" : ""; listDiv.innerHTML += `<label style="display:block; margin-bottom:8px;"><input type="checkbox" value="${fUid}" class="edit-comm-chk" ${checked}> ${uDoc.data()?.name || '不明'}</label>`; });
         });
         document.getElementById('edit-community-modal').style.display = 'flex';
       });
     }
     function submitEditCommunity() {
-      const name = document.getElementById('edit-community-name').value.trim();
-      const checks = document.querySelectorAll('.edit-comm-chk:checked');
+      const name = document.getElementById('edit-community-name').value.trim(); const checks = document.querySelectorAll('.edit-comm-chk:checked');
       if(!name) return alert("名前を入力してください");
       const members = [auth.currentUser.uid]; checks.forEach(c => members.push(c.value));
-      db.collection("communities").doc(currentChatId).update({ name: name, members: members }).then(() => {
-        closeModal('edit-community-modal'); alert("コミュニティを更新しました！");
-      });
+      db.collection("communities").doc(currentChatId).update({ name: name, members: members }).then(() => { closeModal('edit-community-modal'); alert("更新しました！"); });
     }
 
-    // === チャット ＆ コミュニティ内募集 ＆ 特命誘い ===
+    // === チャット ＆ 未読処理 ===
     let currentChatId = null; let currentPartnerUid = null; let currentReqId = null; let chatUnsubscribe = null;
     
     function openChat(chatId, partnerName, partnerUid, isMatching, isCommunity) {
@@ -605,11 +669,21 @@
       document.getElementById('btn-comm-edit').style.display = isCommunity ? 'block' : 'none';
       
       switchTab('screen-chat', partnerName);
+      
+      // 開いた瞬間に既読にする
+      localStorage.setItem('read_' + chatId, Date.now());
+      updateUnread(chatId, 0);
+      const dot = document.getElementById(`unread_${chatId}`); if(dot) dot.style.display = 'none';
+
       if(chatUnsubscribe) chatUnsubscribe();
       
       const coll = isCommunity ? db.collection("communities").doc(chatId).collection("messages") : db.collection("chats").doc(chatId).collection("messages");
       chatUnsubscribe = coll.orderBy("createdAt", "asc").onSnapshot(snap => {
         const msgBox = document.getElementById('chat-messages'); msgBox.innerHTML = "";
+        
+        // 開いている間は常に既読時刻を更新する
+        localStorage.setItem('read_' + chatId, Date.now());
+
         snap.forEach(doc => {
           const msg = doc.data(); const isMe = msg.sender === auth.currentUser.uid;
           const align = isMe ? "flex-end" : "flex-start"; const bubbleClass = isMe ? "chat-me" : "chat-friend";
@@ -627,6 +701,7 @@
     }
 
     function closeChat() {
+      if(currentChatId) localStorage.setItem('read_' + currentChatId, Date.now()); // 閉じる時にも記録
       if(chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
       currentChatId = null; currentPartnerUid = null; currentReqId = null; switchTab('screen-messages', 'メッセージ');
     }
@@ -634,8 +709,12 @@
     function sendMessage() {
       const text = document.getElementById('chat-text').value.trim(); if(!text || !currentChatId) return;
       const isCommunity = !currentPartnerUid; 
-      const coll = isCommunity ? db.collection("communities").doc(currentChatId).collection("messages") : db.collection("chats").doc(currentChatId).collection("messages");
-      coll.add({ sender: auth.currentUser.uid, senderName: myProfileData.name, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => document.getElementById('chat-text').value = "");
+      const parentDoc = isCommunity ? db.collection("communities").doc(currentChatId) : db.collection("chats").doc(currentChatId);
+      
+      parentDoc.collection("messages").add({ sender: auth.currentUser.uid, senderName: myProfileData.name, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { 
+        document.getElementById('chat-text').value = ""; 
+        parentDoc.set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); // 親ドキュメントを更新して未読バッジを光らせる
+      });
     }
 
     function openDirectInviteModal() { document.getElementById('direct-invite-modal').style.display = 'flex'; }
@@ -646,7 +725,11 @@
         postId: 'direct_invite', hostUid: currentPartnerUid, guestUid: u.uid,
         guestName: myProfileData.name || u.displayName, guestPhoto: myProfileData.photoURL || null,
         selectedDate: date, selectedPlace: place, status: 'pending', isDirect: true, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => { closeModal('direct-invite-modal'); alert("特命の誘いを送信しました！"); });
+      }).then(() => { 
+        closeModal('direct-invite-modal'); alert("特命の誘いを送信しました！"); 
+        // 誘いも未読対象にするために親を更新
+        db.collection("chats").doc(currentChatId).set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      });
     }
 
     function openCommunityInviteModal() { document.getElementById('community-invite-modal').style.display = 'flex'; }
@@ -654,9 +737,11 @@
       const date = document.getElementById('comm-invite-date').value; const place = document.getElementById('comm-invite-place').value; const text = document.getElementById('comm-invite-text').value.trim();
       if(!date || !place) return alert("日程と場所を指定してください");
       db.collection("communities").doc(currentChatId).collection("messages").add({
-        type: "invite", date: date, place: place, text: text,
-        sender: auth.currentUser.uid, senderName: myProfileData.name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => { closeModal('community-invite-modal'); });
+        type: "invite", date: date, place: place, text: text, sender: auth.currentUser.uid, senderName: myProfileData.name, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => { 
+        closeModal('community-invite-modal'); 
+        db.collection("communities").doc(currentChatId).set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      });
     }
     
     function joinCommunityInvite(hostUid, date, place) {
@@ -678,7 +763,7 @@
         db.collection('users').doc(currentPartnerUid).set({ matchCount: (d.matchCount || 0) + 1, ratingSum: (d.ratingSum || 0) + rating, ratingCount: (d.ratingCount || 0) + 1 }, { merge: true }).then(() => {
           if(doAddFriend) db.collection("users").doc(auth.currentUser.uid).set({ friends: firebase.firestore.FieldValue.arrayUnion(currentPartnerUid) }, { merge: true });
           db.collection('requests').doc(currentReqId).update({ status: 'completed' }).then(() => {
-            closeModal('review-modal'); alert("合トレ完了報告を送信しました！"); closeChat(); loadMessagesAndRequests();
+            closeModal('review-modal'); alert("完了報告を送信しました！"); closeChat(); loadMessagesAndRequests();
           });
         });
       });
