@@ -327,8 +327,30 @@
     }
     
     function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
-    function loginWithGoogle() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).catch(e => alert("エラー: " + e.message)); }
+    function loginWithGoogle() {
+      const ua = navigator.userAgent.toLowerCase();
+      // LINEなどのアプリ内ブラウザからのアクセスを検知して案内を出す
+      if (ua.indexOf('line') > -1 || ua.indexOf('instagram') > -1) {
+        alert("LINEなどのアプリ内ブラウザでは、セキュリティ制限によりログインできない場合があります。\n\n画面右下（または右上）のメニューボタン「⋮」や「↑」から、「デフォルトのブラウザで開く（Safari等）」を選択して開き直してください。");
+      }
+      
+      const provider = new firebase.auth.GoogleAuthProvider();
+      
+      // ホーム画面アプリやChromeで安定する「ポップアップ方式」を基本にする
+      auth.signInWithPopup(provider).catch(error => {
+        // もしブラウザにポップアップをブロックされたら「リダイレクト方式」に自動で切り替える安全設計
+        if (error.code === 'auth/popup-blocked') {
+          auth.signInWithRedirect(provider);
+        } else {
+          alert("ログインエラー: " + error.message);
+        }
+      });
+    }
 
+    // リダイレクト方式で戻ってきた場合のエラーキャッチ
+    auth.getRedirectResult().catch(error => {
+      console.error("Redirect Login Error:", error);
+    });
     let myProfileData = {};
     let myFriends = []; 
     let myCommunities = []; 
