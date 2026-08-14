@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>JOINT TRAINING</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JOINT">
+  <link rel="apple-touch-icon" href="image_2e8be5.jpg">
+
+  <style>
+    /* モノトーンUIデザイン */
+    body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; margin: 0; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
+    header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 20px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+    .section-title { color: #888; font-size: 13px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    svg { display: inline-block; vertical-align: middle; }
+    .btn-primary { background-color: #ffffff; color: #000000; border: none; padding: 16px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .part-btn { background-color: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; display: inline-block; margin: 0 5px 10px 0; }
+    .part-btn.selected { background-color: #ffffff; color: #000000; border-color: #ffffff; }
+    .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #111111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: env(safe-area-inset-bottom, 12px); z-index: 100; }
+    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tab-item.active { color: #ffffff; }
+    .screen { display: none; animation: fadeIn 0.3s; }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+
+  <!-- 🔴 Firebase SDKの読み込み -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+
+  <header id="app-header">JOINT TRAINING</header>
+
+  <div class="container">
+    
+    <!-- 未ログイン画面（最初に表示される） -->
+    <div id="screen-login" class="screen active">
+      <div style="text-align: center; margin-top: 50px;">
+        <img src="image_2e8be5.jpg" alt="JOINT TRAINING LOGO" style="width: 150px; border-radius: 20px; margin-bottom: 30px;">
+        <h2>本気の合トレマッチング</h2>
+        <button class="btn-primary" onclick="loginWithGoogle()" style="margin-top: 40px;">
+          Googleでログインして始める
+        </button>
+      </div>
+    </div>
+
+    <!-- さがす画面 -->
+    <div id="screen-search" class="screen">
+      <div id="posts-container">
+        <p style="color: #888; text-align: center;">募集データを読み込み中...</p>
+      </div>
+    </div>
+
+    <!-- 募集する画面 -->
+    <div id="screen-post" class="screen">
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">📍 開催ジム（テスト用）</div>
+        <div class="part-btn" onclick="this.classList.toggle('selected')" data-val="エニタイムフィットネス">エニタイムフィットネス</div>
+        <div class="part-btn" onclick="this.classList.toggle('selected')" data-val="港区スポーツセンター">港区スポーツセンター</div>
+      </div>
+      <button class="btn-primary" onclick="submitPost()">この内容で募集する</button>
+    </div>
+
+  </div>
+
+  <!-- 下部タブバー（ログイン後のみ表示） -->
+  <div class="tab-bar" id="bottom-tabs" style="display: none;">
+    <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')">さがす</div>
+    <div class="tab-item" onclick="switchTab('screen-post', '募集を作成')">募集する</div>
+  </div>
+
+  <!-- 🔴 ここからFirebaseの設定と連携ロジック -->
+  <script>
+    // ▼▼▼ オーナー様のFirebase APIキーをここに貼り付けます ▼▼▼
+    const firebaseConfig = {
+    apiKey: "AIzaSyA43zyt2XOK6-Pqwd0AAQcMYIcIqGpUsW4",
+    authDomain: "joint-training.firebaseapp.com",
+    projectId: "joint-training",
+    storageBucket: "joint-training.firebasestorage.app",
+    messagingSenderId: "479294292720",
+    appId: "1:479294292720:web:bcdb0d54b4c7ce46c9b835",
+    measurementId: "G-Q6KXKNPJFH"
+  };
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+    // Firebaseの初期化
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // 画面切り替えロジック
+    function switchTab(screenId, headerTitle) {
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+      document.getElementById('app-header').innerText = headerTitle;
+      window.scrollTo(0, 0);
+    }
+
+    // ログイン処理（Google）
+    function loginWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).then((result) => {
+        alert(result.user.displayName + "さん、ようこそ！");
+        document.getElementById('bottom-tabs').style.display = 'flex';
+        switchTab('screen-search', 'JOINT TRAINING');
+        loadPosts(); // ログイン後に募集一覧を読み込む
+      }).catch((error) => {
+        console.error("ログインエラー:", error);
+      });
+    }
+
+    // 募集をデータベースに保存する処理
+    function submitPost() {
+      const user = auth.currentUser;
+      if (!user) return alert("ログインしてください");
+
+      // 選択されたジムを取得
+      const selectedGyms = Array.from(document.querySelectorAll('#screen-post .selected')).map(el => el.getAttribute('data-val'));
+      
+      if (selectedGyms.length === 0) return alert("ジムを選択してください");
+
+      db.collection("posts").add({
+        hostName: user.displayName,
+        gyms: selectedGyms,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        alert("募集を公開しました！");
+        // ボタンの選択状態をリセット
+        document.querySelectorAll('#screen-post .selected').forEach(el => el.classList.remove('selected'));
+        switchTab('screen-search', 'JOINT TRAINING');
+        loadPosts();
+      }).catch((error) => {
+        console.error("保存エラー:", error);
+      });
+    }
+
+    // データベースから募集一覧を読み込む処理
+    function loadPosts() {
+      db.collection("posts").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
+        const container = document.getElementById('posts-container');
+        container.innerHTML = ""; // 一旦クリア
+        
+        if(querySnapshot.empty) {
+          container.innerHTML = "<p style='color:#888; text-align:center;'>まだ募集がありません。</p>";
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const post = doc.data();
+          const gymsText = post.gyms ? post.gyms.join(" / ") : "場所未定";
+          
+          container.innerHTML += `
+            <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+              <h3 style="margin: 0 0 10px 0; font-size: 18px;">${post.hostName}</h3>
+              <p style="color: #ccc; font-size: 14px; margin: 0;">📍 ${gymsText}</p>
+              <button class="btn-primary" style="padding: 10px; margin-top: 15px;">リクエスト</button>
+            </div>
+          `;
+        });
+      });
+    }
+  </script>
+</body>
+</html>
