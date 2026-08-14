@@ -256,12 +256,10 @@
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
     <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>さがす</div>
     <div class="tab-item" onclick="openPostTabNew()"><svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>募集</div>
-    
     <div class="tab-item" onclick="switchTab('screen-messages', 'メッセージ')">
       <div id="msg-badge-total" class="badge">0</div>
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>メッセージ
     </div>
-    
     <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>マイページ</div>
   </div>
 
@@ -296,7 +294,6 @@
       document.getElementById('profile-gyms').innerHTML += gymHtml;
     };
 
-    // 未読管理
     let unreadMap = {};
     function updateUnread(key, count) {
       unreadMap[key] = count;
@@ -391,38 +388,30 @@
       }, { merge: true }).then(() => alert("保存しました！"));
     }
 
-    // === コミュニティ ===
     function loadCommunities() {
       db.collection("communities").where("members", "array-contains", auth.currentUser.uid).onSnapshot(snap => {
         myCommunities = [];
         const cContainer = document.getElementById('communities-container'); cContainer.innerHTML = "";
-        
         if(snap.empty) { cContainer.innerHTML = "<p style='color:#888; font-size:12px;'>所属しているコミュニティはありません。</p>"; }
         
         snap.forEach(doc => {
           const c = doc.data(); const cId = doc.id; myCommunities.push(cId);
-          
           cContainer.innerHTML += `
             <div class="list-item" onclick="openChat('${cId}', '${c.name}', null, false, true)">
               <div class="avatar-small" style="background:#2980b9;">🏢</div>
-              <div style="flex:1;">
-                <div style="font-weight: bold;">${c.name} <span style="font-size:10px; color:#aaa;">(${c.members.length}人)</span></div>
-              </div>
+              <div style="flex:1;"><div style="font-weight: bold;">${c.name} <span style="font-size:10px; color:#aaa;">(${c.members.length}人)</span></div></div>
               <div id="unread_${cId}" class="unread-dot"></div>
             </div>`;
             
           const lastRead = localStorage.getItem('read_' + cId) || 0;
           if(c.updatedAt && c.updatedAt.toMillis() > lastRead) {
-            updateUnread(cId, 1);
-            const dot = document.getElementById(`unread_${cId}`); if(dot) dot.style.display = 'block';
-          } else {
-            updateUnread(cId, 0);
-          }
+            updateUnread(cId, 1); const dot = document.getElementById(`unread_${cId}`); if(dot) dot.style.display = 'block';
+          } else { updateUnread(cId, 0); }
         });
       });
     }
 
-    // === 募集機能 ＆ 編集（全体公開のみ） ===
+    // === 募集機能 ＆ タイムライン（最新プロフィール情報連動） ===
     let selectedDates = []; let selectedPostAreas = []; let selectedPostGyms = []; let editingPostId = null;
     function openPostTabNew() {
       editingPostId = null; document.getElementById('post-description').value = "";
@@ -465,8 +454,7 @@
       const u = auth.currentUser;
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
       const postData = {
-        uid: u.uid, hostName: myProfileData.name || u.displayName, hostPhoto: myProfileData.photoURL || null,
-        description: document.getElementById('post-description').value,
+        uid: u.uid, scope: 'public', description: document.getElementById('post-description').value,
         dates: selectedDates, areas: selectedPostAreas, gyms: selectedPostGyms, parts: parts,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -478,31 +466,41 @@
       }
     }
 
+    // タイムライン描画（プレースホルダーを使ってユーザー情報を非同期で引っ張る）
     function applyFilter() {
       const fDate = document.getElementById('filter-date').value; const fArea = document.getElementById('filter-area').value;
       const fPart = document.getElementById('filter-part').value;
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
-        const container = document.getElementById('posts-container'); container.innerHTML = ""; let count = 0;
+        const container = document.getElementById('posts-container'); 
+        let htmlStr = ""; let count = 0; let userPromises = [];
+        
         snap.forEach(doc => {
           const p = doc.data(); const pId = doc.id;
-          // 全体公開以外の投稿は弾く（過去データ対応）
           if(p.scope && p.scope !== 'public') return;
           if (fDate && (!p.dates || !p.dates.includes(fDate))) return;
           if (fArea && (!p.areas || !p.areas.includes(fArea))) return;
           if (fPart && (!p.parts || (!p.parts.includes(fPart) && !p.parts.includes("すべて")))) return;
 
           count++;
+          userPromises.push({ uid: p.uid, pId: pId });
+          
           const dText = p.dates ? p.dates.join(", ") : "未定"; const pText = p.areas.concat(p.gyms).join(", ");
-          const avatarHtml = p.hostPhoto ? `<img src="${p.hostPhoto}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;border:2px solid #555;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;margin-right:15px;font-size:20px;font-weight:bold;">${p.hostName.charAt(0)}</div>`;
           const descHtml = p.description ? `<div style="background:#222; padding:12px; border-radius:8px; font-size:13px; margin:15px 0;">${p.description}</div>` : '';
 
           let actionBtn = p.uid === auth.currentUser.uid 
             ? `<div style="display: flex; gap: 10px; margin-top: 15px;"><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px;" onclick="editMyPost('${pId}')">✏️ 編集</button><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px; border-color:#e74c3c; color:#e74c3c;" onclick="deleteMyPost('${pId}')">🗑 削除</button></div>`
             : `<button class="btn-primary" style="padding: 12px; margin-top: 15px;" onclick="openApplyModal('${pId}', '${p.uid}', '${p.dates.join(',')}', '${pText}')">🚀 この合トレに申し込む</button>`;
 
-          container.innerHTML += `
+          htmlStr += `
             <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
-              <div style="display: flex; align-items: center;">${avatarHtml}<h3 style="margin: 0;">${p.hostName}</h3></div>
+              <div style="display: flex; align-items: center;">
+                <div id="avatar-${pId}"></div>
+                <div style="flex: 1;">
+                  <h3 id="name-${pId}" style="margin: 0; font-size: 16px;">読み込み中...</h3>
+                  <div id="stats-${pId}" style="color: #ffcc00; font-size: 11px; font-weight: bold; margin-top: 4px; letter-spacing: 1px;"></div>
+                  <div id="bio-${pId}" style="color: #aaa; font-size: 11px; margin-top: 4px; line-height: 1.3;"></div>
+                </div>
+              </div>
               ${descHtml}
               <div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;">
                 <div>📅 ${dText}</div><div>📍 ${pText}</div><div>💪 ${p.parts ? p.parts.join('・') : ''}</div>
@@ -510,7 +508,35 @@
               ${actionBtn}
             </div>`;
         });
-        if(count === 0) container.innerHTML = "<p style='text-align:center;'>条件に合う募集がありません。</p>";
+        
+        if(count === 0) {
+          container.innerHTML = "<p style='text-align:center;'>条件に合う募集がありません。</p>";
+        } else {
+          container.innerHTML = htmlStr;
+          // DOM生成後にユーザー情報を流し込む
+          userPromises.forEach(info => {
+            db.collection("users").doc(info.uid).get().then(uDoc => {
+              const uData = uDoc.data() || {};
+              const uName = uData.name || "名称未設定";
+              const uPhoto = uData.photoURL;
+              const uBio = uData.bio || "";
+              const mCount = uData.matchCount || 0;
+              let rAvg = 0; if(uData.ratingCount > 0) rAvg = (uData.ratingSum / uData.ratingCount).toFixed(1);
+              
+              const avatarEl = document.getElementById("avatar-" + info.pId);
+              if(avatarEl) avatarEl.innerHTML = uPhoto ? `<img src="${uPhoto}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;border:2px solid #555;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;margin-right:15px;font-size:20px;font-weight:bold;">${uName.charAt(0)}</div>`;
+              
+              const nameEl = document.getElementById("name-" + info.pId);
+              if(nameEl) nameEl.innerText = uName;
+              
+              const statsEl = document.getElementById("stats-" + info.pId);
+              if(statsEl) statsEl.innerText = `🔥合トレ: ${mCount}回 ｜ ⭐評価: ${rAvg > 0 ? rAvg : '-'}`;
+              
+              const bioEl = document.getElementById("bio-" + info.pId);
+              if(bioEl) bioEl.innerText = uBio;
+            });
+          });
+        }
       });
     }
 
@@ -532,7 +558,6 @@
       }).then(() => { closeModal('apply-modal'); alert("申し込みを送信しました！"); });
     }
 
-    // === メッセージ画面・未読・特命合トレ ===
     function loadMessagesAndRequests() {
       const uid = auth.currentUser.uid;
       
@@ -614,7 +639,6 @@
       }
     }
 
-    // === コミュニティ作成・編集・削除 ===
     function openCreateCommunityModal() {
       if(myFriends.length === 0) return alert("まずはフレンドを追加してください。");
       const listDiv = document.getElementById('community-friends-list'); listDiv.innerHTML = "";
@@ -652,7 +676,6 @@
       }
     }
 
-    // === チャット ＆ 未読処理 ===
     let currentChatId = null; let currentPartnerUid = null; let currentReqId = null; let chatUnsubscribe = null;
     
     function openChat(chatId, partnerName, partnerUid, isMatching, isCommunity) {
@@ -701,7 +724,6 @@
       const text = document.getElementById('chat-text').value.trim(); if(!text || !currentChatId) return;
       const isCommunity = !currentPartnerUid; 
       const parentDoc = isCommunity ? db.collection("communities").doc(currentChatId) : db.collection("chats").doc(currentChatId);
-      
       parentDoc.collection("messages").add({ sender: auth.currentUser.uid, senderName: myProfileData.name, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { 
         document.getElementById('chat-text').value = ""; 
         parentDoc.set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
