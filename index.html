@@ -73,11 +73,8 @@
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           <input type="date" id="filter-date" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
           <select id="filter-area" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;"><option value="">全てのエリア</option></select>
-          <select id="filter-part" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
+          <select id="filter-part" class="input-field" style="margin:0; width: 100%; padding: 10px; font-size: 13px;">
             <option value="">全ての部位</option><option value="すべて">すべて</option><option value="胸">胸</option><option value="背中">背中</option><option value="脚">脚</option><option value="肩">肩</option><option value="腕">腕</option>
-          </select>
-          <select id="filter-scope" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
-            <option value="public">全体公開のみ</option>
           </select>
           <button class="btn-primary" style="margin:0; width: 100%; padding: 10px; font-size: 13px;" onclick="applyFilter()">検索</button>
         </div>
@@ -87,10 +84,6 @@
 
     <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
-      <div style="margin-bottom: 30px;">
-        <div class="section-title">🌍 公開範囲</div>
-        <select id="post-scope-input" class="input-field"><option value="public">全体に公開</option></select>
-      </div>
       <div style="margin-bottom: 30px;">
         <div class="section-title">📝 募集メッセージ（任意）</div>
         <textarea id="post-description" class="input-field" placeholder="「脚トレ追い込み合える方募集！」など"></textarea>
@@ -152,7 +145,6 @@
       </div>
       <div id="chat-messages" style="display: flex; flex-direction: column; padding-bottom: 20px;"></div>
       <div class="chat-input-area">
-        <!-- 戻るボタンはヘッダーに移動したため、入力欄を広くしました -->
         <input type="text" id="chat-text" class="input-field" placeholder="メッセージ..." style="margin: 0;">
         <button class="btn-primary" style="width: 70px; margin: 0; padding: 10px;" onclick="sendMessage()">送信</button>
       </div>
@@ -244,6 +236,7 @@
       <div class="section-title">メンバーの管理</div>
       <div id="edit-community-friends-list" style="max-height:150px; overflow-y:auto; margin-bottom:15px; font-size:14px; color:#fff;"></div>
       <button class="btn-primary" onclick="submitEditCommunity()">更新する</button>
+      <button class="btn-secondary" style="border-color:#e74c3c; color:#e74c3c; margin-top: 15px;" onclick="deleteCommunity()">🗑 コミュニティを削除</button>
       <button class="btn-secondary" onclick="closeModal('edit-community-modal')">キャンセル</button>
     </div>
   </div>
@@ -323,7 +316,7 @@
       
       if(screenId === 'screen-chat') {
         tabs.style.display = 'none';
-        backBtn.style.display = 'block'; // チャット画面の時だけ戻るボタンを表示
+        backBtn.style.display = 'block';
       } else if(screenId === 'screen-login') {
         tabs.style.display = 'none';
         backBtn.style.display = 'none';
@@ -402,16 +395,12 @@
     function loadCommunities() {
       db.collection("communities").where("members", "array-contains", auth.currentUser.uid).onSnapshot(snap => {
         myCommunities = [];
-        let filterHtml = `<option value="public">全体公開のみ</option><option value="all">すべて表示(コミュニティ含)</option>`;
-        let postHtml = `<option value="public">全体に公開</option>`;
         const cContainer = document.getElementById('communities-container'); cContainer.innerHTML = "";
         
         if(snap.empty) { cContainer.innerHTML = "<p style='color:#888; font-size:12px;'>所属しているコミュニティはありません。</p>"; }
         
         snap.forEach(doc => {
           const c = doc.data(); const cId = doc.id; myCommunities.push(cId);
-          filterHtml += `<option value="${cId}">🏢 ${c.name}</option>`;
-          postHtml += `<option value="${cId}">🏢 ${c.name}のみ</option>`;
           
           cContainer.innerHTML += `
             <div class="list-item" onclick="openChat('${cId}', '${c.name}', null, false, true)">
@@ -422,7 +411,6 @@
               <div id="unread_${cId}" class="unread-dot"></div>
             </div>`;
             
-          // コミュニティの未読監視
           const lastRead = localStorage.getItem('read_' + cId) || 0;
           if(c.updatedAt && c.updatedAt.toMillis() > lastRead) {
             updateUnread(cId, 1);
@@ -431,11 +419,10 @@
             updateUnread(cId, 0);
           }
         });
-        document.getElementById('filter-scope').innerHTML = filterHtml; document.getElementById('post-scope-input').innerHTML = postHtml;
       });
     }
 
-    // === 募集機能 ＆ 編集 ===
+    // === 募集機能 ＆ 編集（全体公開のみ） ===
     let selectedDates = []; let selectedPostAreas = []; let selectedPostGyms = []; let editingPostId = null;
     function openPostTabNew() {
       editingPostId = null; document.getElementById('post-description').value = "";
@@ -446,7 +433,6 @@
     function editMyPost(postId) {
       db.collection("posts").doc(postId).get().then(doc => {
         const post = doc.data(); editingPostId = postId;
-        document.getElementById('post-scope-input').value = post.scope || 'public';
         document.getElementById('post-description').value = post.description || "";
         selectedDates = post.dates || []; renderDates(); selectedPostAreas = post.areas || []; renderPostAreas(); selectedPostGyms = post.gyms || []; renderPostGyms();
         document.querySelectorAll('.part-btn-item').forEach(el => el.classList.remove('selected'));
@@ -480,7 +466,7 @@
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
       const postData = {
         uid: u.uid, hostName: myProfileData.name || u.displayName, hostPhoto: myProfileData.photoURL || null,
-        scope: document.getElementById('post-scope-input').value, description: document.getElementById('post-description').value,
+        description: document.getElementById('post-description').value,
         dates: selectedDates, areas: selectedPostAreas, gyms: selectedPostGyms, parts: parts,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -494,14 +480,13 @@
 
     function applyFilter() {
       const fDate = document.getElementById('filter-date').value; const fArea = document.getElementById('filter-area').value;
-      const fPart = document.getElementById('filter-part').value; const fScope = document.getElementById('filter-scope').value;
+      const fPart = document.getElementById('filter-part').value;
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
         const container = document.getElementById('posts-container'); container.innerHTML = ""; let count = 0;
         snap.forEach(doc => {
           const p = doc.data(); const pId = doc.id;
-          if(p.scope && p.scope !== 'public' && !myCommunities.includes(p.scope) && p.uid !== auth.currentUser.uid) return;
-          if(fScope === 'public' && p.scope && p.scope !== 'public') return;
-          if(fScope !== 'public' && fScope !== 'all' && p.scope !== fScope) return;
+          // 全体公開以外の投稿は弾く（過去データ対応）
+          if(p.scope && p.scope !== 'public') return;
           if (fDate && (!p.dates || !p.dates.includes(fDate))) return;
           if (fArea && (!p.areas || !p.areas.includes(fArea))) return;
           if (fPart && (!p.parts || (!p.parts.includes(fPart) && !p.parts.includes("すべて")))) return;
@@ -510,13 +495,20 @@
           const dText = p.dates ? p.dates.join(", ") : "未定"; const pText = p.areas.concat(p.gyms).join(", ");
           const avatarHtml = p.hostPhoto ? `<img src="${p.hostPhoto}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;margin-right:15px;border:2px solid #555;">` : `<div style="width:50px;height:50px;border-radius:50%;background:#333;display:flex;align-items:center;justify-content:center;margin-right:15px;font-size:20px;font-weight:bold;">${p.hostName.charAt(0)}</div>`;
           const descHtml = p.description ? `<div style="background:#222; padding:12px; border-radius:8px; font-size:13px; margin:15px 0;">${p.description}</div>` : '';
-          const badgeHtml = (p.scope && p.scope !== 'public') ? `<span style="background:#2980b9; color:#fff; font-size:10px; padding:2px 6px; border-radius:4px; margin-bottom:5px; display:inline-block;">🏢 コミュニティ限定</span><br>` : '';
 
           let actionBtn = p.uid === auth.currentUser.uid 
             ? `<div style="display: flex; gap: 10px; margin-top: 15px;"><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px;" onclick="editMyPost('${pId}')">✏️ 編集</button><button class="btn-secondary" style="flex:1; padding:10px; font-size:13px; border-color:#e74c3c; color:#e74c3c;" onclick="deleteMyPost('${pId}')">🗑 削除</button></div>`
             : `<button class="btn-primary" style="padding: 12px; margin-top: 15px;" onclick="openApplyModal('${pId}', '${p.uid}', '${p.dates.join(',')}', '${pText}')">🚀 この合トレに申し込む</button>`;
 
-          container.innerHTML += `<div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">${badgeHtml}<div style="display: flex; align-items: center;">${avatarHtml}<h3 style="margin: 0;">${p.hostName}</h3></div>${descHtml}<div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;"><div>📅 ${dText}</div><div>📍 ${pText}</div><div>💪 ${p.parts ? p.parts.join('・') : ''}</div></div>${actionBtn}</div>`;
+          container.innerHTML += `
+            <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: center;">${avatarHtml}<h3 style="margin: 0;">${p.hostName}</h3></div>
+              ${descHtml}
+              <div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;">
+                <div>📅 ${dText}</div><div>📍 ${pText}</div><div>💪 ${p.parts ? p.parts.join('・') : ''}</div>
+              </div>
+              ${actionBtn}
+            </div>`;
         });
         if(count === 0) container.innerHTML = "<p style='text-align:center;'>条件に合う募集がありません。</p>";
       });
@@ -544,7 +536,6 @@
     function loadMessagesAndRequests() {
       const uid = auth.currentUser.uid;
       
-      // 届いた申し込みの未読
       db.collection('requests').where('hostUid', '==', uid).where('status', '==', 'pending').onSnapshot(snap => {
           const container = document.getElementById('pending-requests-container'); container.innerHTML = "";
           if(snap.empty) { container.innerHTML = "<p style='color:#888; font-size:12px;'>届いている申し込みはありません。</p>"; updateUnread('requests', 0); return; }
@@ -582,7 +573,6 @@
                     <div id="unread_${reqId}" class="unread-dot"></div>
                   </div>`;
                   
-                // 未読判定
                 db.collection("chats").doc(reqId).onSnapshot(cDoc => {
                   const cData = cDoc.data(); const lastRead = localStorage.getItem('read_' + reqId) || 0;
                   if(cData && cData.updatedAt && cData.updatedAt.toMillis() > lastRead) {
@@ -605,7 +595,6 @@
                   <div id="unread_${chatId}" class="unread-dot"></div>
                 </div>`;
                 
-              // 未読判定
               db.collection("chats").doc(chatId).onSnapshot(cDoc => {
                 const cData = cDoc.data(); const lastRead = localStorage.getItem('read_' + chatId) || 0;
                 if(cData && cData.updatedAt && cData.updatedAt.toMillis() > lastRead) {
@@ -625,7 +614,7 @@
       }
     }
 
-    // === コミュニティ作成・編集 ===
+    // === コミュニティ作成・編集・削除 ===
     function openCreateCommunityModal() {
       if(myFriends.length === 0) return alert("まずはフレンドを追加してください。");
       const listDiv = document.getElementById('community-friends-list'); listDiv.innerHTML = "";
@@ -657,6 +646,11 @@
       const members = [auth.currentUser.uid]; checks.forEach(c => members.push(c.value));
       db.collection("communities").doc(currentChatId).update({ name: name, members: members }).then(() => { closeModal('edit-community-modal'); alert("更新しました！"); });
     }
+    function deleteCommunity() {
+      if(confirm("このコミュニティを完全に削除しますか？\n※全メンバーのリストから消去されます。")) {
+        db.collection("communities").doc(currentChatId).delete().then(() => { closeModal('edit-community-modal'); closeChat(); alert("コミュニティを削除しました。"); });
+      }
+    }
 
     // === チャット ＆ 未読処理 ===
     let currentChatId = null; let currentPartnerUid = null; let currentReqId = null; let chatUnsubscribe = null;
@@ -670,7 +664,6 @@
       
       switchTab('screen-chat', partnerName);
       
-      // 開いた瞬間に既読にする
       localStorage.setItem('read_' + chatId, Date.now());
       updateUnread(chatId, 0);
       const dot = document.getElementById(`unread_${chatId}`); if(dot) dot.style.display = 'none';
@@ -680,8 +673,6 @@
       const coll = isCommunity ? db.collection("communities").doc(chatId).collection("messages") : db.collection("chats").doc(chatId).collection("messages");
       chatUnsubscribe = coll.orderBy("createdAt", "asc").onSnapshot(snap => {
         const msgBox = document.getElementById('chat-messages'); msgBox.innerHTML = "";
-        
-        // 開いている間は常に既読時刻を更新する
         localStorage.setItem('read_' + chatId, Date.now());
 
         snap.forEach(doc => {
@@ -701,7 +692,7 @@
     }
 
     function closeChat() {
-      if(currentChatId) localStorage.setItem('read_' + currentChatId, Date.now()); // 閉じる時にも記録
+      if(currentChatId) localStorage.setItem('read_' + currentChatId, Date.now());
       if(chatUnsubscribe) { chatUnsubscribe(); chatUnsubscribe = null; }
       currentChatId = null; currentPartnerUid = null; currentReqId = null; switchTab('screen-messages', 'メッセージ');
     }
@@ -713,7 +704,7 @@
       
       parentDoc.collection("messages").add({ sender: auth.currentUser.uid, senderName: myProfileData.name, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { 
         document.getElementById('chat-text').value = ""; 
-        parentDoc.set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); // 親ドキュメントを更新して未読バッジを光らせる
+        parentDoc.set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       });
     }
 
@@ -727,7 +718,6 @@
         selectedDate: date, selectedPlace: place, status: 'pending', isDirect: true, createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => { 
         closeModal('direct-invite-modal'); alert("特命の誘いを送信しました！"); 
-        // 誘いも未読対象にするために親を更新
         db.collection("chats").doc(currentChatId).set({ updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
       });
     }
@@ -754,7 +744,6 @@
       }).then(() => { alert("参加を申し込みました！相手の承認をお待ちください。"); });
     }
 
-    // レビュー機能
     function openReviewModal() { document.getElementById('review-modal').style.display = 'flex'; }
     function submitReview() {
       const rating = parseInt(document.getElementById('review-rating').value); const doAddFriend = document.getElementById('review-friend').checked;
