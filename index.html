@@ -298,7 +298,7 @@
     // === 認証・プロフィール ===
     function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithRedirect(provider).catch(error => alert("エラー: " + error.message));
+      auth.signInWithPopup(provider).catch(error => alert("エラー: " + error.message));
     }
     auth.getRedirectResult().catch(error => {
       alert("ログイン失敗の原因: " + error.message);
