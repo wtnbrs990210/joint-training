@@ -6,28 +6,44 @@
   <title>JOINT TRAINING</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="JOINT">
   <link rel="apple-touch-icon" href="image_2e8be5.jpg">
 
   <style>
-    /* モノトーンUIデザイン */
-    body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; margin: 0; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
-    header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 20px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
+    /* 基本デザイン */
+    body { background-color: #0a0a0a; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; margin: 0; padding-bottom: 90px; -webkit-tap-highlight-color: transparent; }
+    header { background-color: #111111; color: #ffffff; text-align: center; padding: 18px 0; font-size: 18px; font-weight: 900; border-bottom: 1px solid #333; position: sticky; top: 0; z-index: 10; letter-spacing: 2px; }
     .container { max-width: 480px; margin: 0 auto; padding: 20px; }
-    .section-title { color: #888; font-size: 13px; font-weight: bold; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-    svg { display: inline-block; vertical-align: middle; }
-    .btn-primary { background-color: #ffffff; color: #000000; border: none; padding: 16px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .part-btn { background-color: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; display: inline-block; margin: 0 5px 10px 0; }
+    
+    /* UIパーツ */
+    .section-title { color: #888; font-size: 13px; font-weight: bold; margin-bottom: 10px; }
+    .btn-primary { background-color: #ffffff; color: #000000; border: none; padding: 14px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; }
+    .btn-secondary { background-color: transparent; color: #ffffff; border: 1px solid #555; padding: 14px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 10px; }
+    .part-btn { background-color: #1a1a1a; color: #aaa; border: 1px solid #444; padding: 10px 15px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; display: inline-block; margin: 0 5px 10px 0; }
     .part-btn.selected { background-color: #ffffff; color: #000000; border-color: #ffffff; }
+    
+    /* 入力フォーム */
+    .input-field { width: 100%; background-color: #1a1a1a; border: 1px solid #444; color: #fff; padding: 12px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; box-sizing: border-box; }
+    textarea.input-field { resize: vertical; min-height: 80px; }
+
+    /* モーダル（確認画面） */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+    .modal-content { background-color: #161616; border: 1px solid #333; padding: 20px; border-radius: 12px; width: 80%; max-width: 350px; }
+
+    /* リストアイテム（フレンドなど） */
+    .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
+    .avatar { width: 40px; height: 40px; background-color: #333; border-radius: 50%; margin-right: 15px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+    /* 下部タブバー */
     .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #111111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; padding-bottom: env(safe-area-inset-bottom, 12px); z-index: 100; }
-    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .tab-item { color: #666; text-align: center; font-size: 10px; width: 25%; cursor: pointer; font-weight: bold; }
     .tab-item.active { color: #ffffff; }
+
     .screen { display: none; animation: fadeIn 0.3s; }
     .screen.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 
-  <!-- 🔴 Firebase SDKの読み込み -->
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -38,43 +54,100 @@
 
   <div class="container">
     
-    <!-- 未ログイン画面（最初に表示される） -->
+    <!-- 0. ログイン画面 -->
     <div id="screen-login" class="screen active">
       <div style="text-align: center; margin-top: 50px;">
-        <img src="image_2e8be5.jpg" alt="JOINT TRAINING LOGO" style="width: 150px; border-radius: 20px; margin-bottom: 30px;">
+        <img src="image_2e8be5.jpg" alt="LOGO" style="width: 150px; border-radius: 20px; margin-bottom: 30px;">
         <h2>本気の合トレマッチング</h2>
-        <button class="btn-primary" onclick="loginWithGoogle()" style="margin-top: 40px;">
-          Googleでログインして始める
-        </button>
+        <button class="btn-primary" onclick="loginWithGoogle()" style="margin-top: 40px;">Googleでログインして始める</button>
       </div>
     </div>
 
-    <!-- さがす画面 -->
+    <!-- 1. さがす画面 -->
     <div id="screen-search" class="screen">
       <div id="posts-container">
         <p style="color: #888; text-align: center;">募集データを読み込み中...</p>
       </div>
     </div>
 
-    <!-- 募集する画面 -->
+    <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
       <div style="margin-bottom: 30px;">
-        <div class="section-title">📍 開催ジム（テスト用）</div>
-        <div class="part-btn" onclick="this.classList.toggle('selected')" data-val="エニタイムフィットネス">エニタイムフィットネス</div>
-        <div class="part-btn" onclick="this.classList.toggle('selected')" data-val="港区スポーツセンター">港区スポーツセンター</div>
+        <div class="section-title">📍 開催ジムを選択</div>
+        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">エニタイムフィットネス</div>
+        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">Gold's Gym</div>
+        <div class="part-btn gym-btn" onclick="this.classList.toggle('selected')">港区スポーツセンター</div>
       </div>
-      <button class="btn-primary" onclick="submitPost()">この内容で募集する</button>
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">💪 メイン部位</div>
+        <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">胸</div>
+        <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">背中</div>
+        <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">脚</div>
+      </div>
+      <!-- 確認画面を呼び出すボタン -->
+      <button class="btn-primary" onclick="openConfirmModal()">内容を確認する</button>
+    </div>
+
+    <!-- 3. フレンド＆メッセージ画面 -->
+    <div id="screen-friends" class="screen">
+      <div class="section-title">フレンド一覧</div>
+      <div id="friends-container">
+        <!-- モックデータ（将来的にデータベースから取得） -->
+        <div class="list-item" onclick="alert('TAKUYAさんとのチャット画面が開きます（開発中）')">
+          <div class="avatar">T</div>
+          <div>
+            <div style="font-weight: bold; font-size: 16px;">TAKUYA</div>
+            <div style="font-size: 12px; color: #888;">昨日はありがとうございました！</div>
+          </div>
+        </div>
+        <div class="list-item" onclick="alert('KENJIさんとのチャット画面が開きます（開発中）')">
+          <div class="avatar">K</div>
+          <div>
+            <div style="font-weight: bold; font-size: 16px;">KENJI</div>
+            <div style="font-size: 12px; color: #888;">来週の脚トレ、よろしくお願いします。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. マイページ（設定）画面 -->
+    <div id="screen-mypage" class="screen">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div class="avatar" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto 10px;" id="mypage-avatar">U</div>
+      </div>
+      <div class="section-title">表示名</div>
+      <input type="text" id="profile-name" class="input-field" placeholder="名前を入力">
+      
+      <div class="section-title">自己紹介</div>
+      <textarea id="profile-bio" class="input-field" placeholder="筋トレ歴や得意な種目などを入力"></textarea>
+
+      <div class="section-title">契約ジム（カンマ区切り）</div>
+      <input type="text" id="profile-gyms" class="input-field" placeholder="例: エニタイム, ゴールドジム">
+
+      <button class="btn-primary" onclick="saveProfile()">プロフィールを保存する</button>
+      <button class="btn-secondary" onclick="firebase.auth().signOut().then(() => location.reload())">ログアウト</button>
     </div>
 
   </div>
 
-  <!-- 下部タブバー（ログイン後のみ表示） -->
+  <!-- 投稿確認モーダル（ポップアップ） -->
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="modal-content">
+      <h3 style="margin-top: 0;">以下の内容で募集しますか？</h3>
+      <div id="confirm-content" style="color: #ccc; font-size: 14px; margin-bottom: 20px; line-height: 1.6;"></div>
+      <button class="btn-primary" onclick="submitPost()">募集を確定する</button>
+      <button class="btn-secondary" onclick="closeConfirmModal()">キャンセル</button>
+    </div>
+  </div>
+
+  <!-- 下部タブバー -->
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
     <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')">さがす</div>
     <div class="tab-item" onclick="switchTab('screen-post', '募集を作成')">募集する</div>
+    <div class="tab-item" onclick="switchTab('screen-friends', 'メッセージ')">メッセージ</div>
+    <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')">マイページ</div>
   </div>
 
-  <!-- 🔴 ここからFirebaseの設定と連携ロジック -->
   <script>
     // ▼▼▼ オーナー様のFirebase APIキーをここに貼り付けます ▼▼▼
     const firebaseConfig = {
@@ -85,82 +158,142 @@
     messagingSenderId: "479294292720",
     appId: "1:479294292720:web:bcdb0d54b4c7ce46c9b835",
     measurementId: "G-Q6KXKNPJFH"
-  };
+  }; 
+
+
     // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-    // Firebaseの初期化
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // 画面切り替えロジック
+    // 画面切り替え
     function switchTab(screenId, headerTitle) {
       document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
       document.getElementById(screenId).classList.add('active');
       document.getElementById('app-header').innerText = headerTitle;
+      document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+      event.currentTarget.classList.add('active');
       window.scrollTo(0, 0);
     }
 
-    // ログイン処理（Google）
+    // ログイン処理
     function loginWithGoogle() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).then((result) => {
-        alert(result.user.displayName + "さん、ようこそ！");
+      auth.signInWithPopup(provider).catch(error => console.error(error));
+    }
+
+    // ログイン状態の監視（ログインしたらタブを表示）
+    auth.onAuthStateChanged(user => {
+      if (user) {
         document.getElementById('bottom-tabs').style.display = 'flex';
         switchTab('screen-search', 'JOINT TRAINING');
-        loadPosts(); // ログイン後に募集一覧を読み込む
-      }).catch((error) => {
-        console.error("ログインエラー:", error);
+        loadPosts();
+        loadProfile(user.uid);
+      } else {
+        document.getElementById('bottom-tabs').style.display = 'none';
+        switchTab('screen-login', 'JOINT TRAINING');
+      }
+    });
+
+    /* ==================================
+       1. マイページ（プロフィール設定）機能
+       ================================== */
+    function loadProfile(uid) {
+      db.collection("users").doc(uid).get().then(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          document.getElementById('profile-name').value = data.name || auth.currentUser.displayName;
+          document.getElementById('profile-bio').value = data.bio || "";
+          document.getElementById('profile-gyms').value = data.gyms || "";
+          document.getElementById('mypage-avatar').innerText = (data.name || auth.currentUser.displayName).charAt(0);
+        } else {
+          document.getElementById('profile-name').value = auth.currentUser.displayName;
+          document.getElementById('mypage-avatar').innerText = auth.currentUser.displayName.charAt(0);
+        }
       });
     }
 
-    // 募集をデータベースに保存する処理
+    function saveProfile() {
+      const uid = auth.currentUser.uid;
+      const name = document.getElementById('profile-name').value;
+      const bio = document.getElementById('profile-bio').value;
+      const gyms = document.getElementById('profile-gyms').value;
+
+      db.collection("users").doc(uid).set({
+        name: name,
+        bio: bio,
+        gyms: gyms,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).then(() => {
+        alert("プロフィールを保存しました！");
+      });
+    }
+
+    /* ==================================
+       4. 投稿確認モーダル & 募集機能
+       ================================== */
+    function openConfirmModal() {
+      const gyms = Array.from(document.querySelectorAll('.gym-btn.selected')).map(el => el.innerText);
+      const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
+
+      if (gyms.length === 0 || parts.length === 0) {
+        return alert("ジムと部位を1つ以上選択してください。");
+      }
+
+      const content = `
+        <strong>📍 場所:</strong><br>${gyms.join(', ')}<br><br>
+        <strong>💪 部位:</strong><br>${parts.join(', ')}
+      `;
+      document.getElementById('confirm-content').innerHTML = content;
+      document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal').style.display = 'none';
+    }
+
     function submitPost() {
       const user = auth.currentUser;
-      if (!user) return alert("ログインしてください");
+      const gyms = Array.from(document.querySelectorAll('.gym-btn.selected')).map(el => el.innerText);
+      const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
 
-      // 選択されたジムを取得
-      const selectedGyms = Array.from(document.querySelectorAll('#screen-post .selected')).map(el => el.getAttribute('data-val'));
-      
-      if (selectedGyms.length === 0) return alert("ジムを選択してください");
-
-      db.collection("posts").add({
-        hostName: user.displayName,
-        gyms: selectedGyms,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        alert("募集を公開しました！");
-        // ボタンの選択状態をリセット
-        document.querySelectorAll('#screen-post .selected').forEach(el => el.classList.remove('selected'));
-        switchTab('screen-search', 'JOINT TRAINING');
-        loadPosts();
-      }).catch((error) => {
-        console.error("保存エラー:", error);
+      // マイページで設定した名前を取得して投稿
+      db.collection("users").doc(user.uid).get().then(doc => {
+        const hostName = doc.exists && doc.data().name ? doc.data().name : user.displayName;
+        
+        db.collection("posts").add({
+          uid: user.uid,
+          hostName: hostName,
+          gyms: gyms,
+          parts: parts,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          closeConfirmModal();
+          alert("募集を確定しました！");
+          document.querySelectorAll('#screen-post .selected').forEach(el => el.classList.remove('selected'));
+          switchTab('screen-search', 'JOINT TRAINING');
+        });
       });
     }
 
-    // データベースから募集一覧を読み込む処理
+    /* タイムライン読み込み機能 */
     function loadPosts() {
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
         const container = document.getElementById('posts-container');
-        container.innerHTML = ""; // 一旦クリア
-        
+        container.innerHTML = ""; 
         if(querySnapshot.empty) {
           container.innerHTML = "<p style='color:#888; text-align:center;'>まだ募集がありません。</p>";
           return;
         }
-
         querySnapshot.forEach((doc) => {
           const post = doc.data();
-          const gymsText = post.gyms ? post.gyms.join(" / ") : "場所未定";
-          
+          const gymsText = post.gyms ? post.gyms.join(" / ") : "";
+          const partsText = post.parts ? post.parts.join("・") : "";
           container.innerHTML += `
             <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
               <h3 style="margin: 0 0 10px 0; font-size: 18px;">${post.hostName}</h3>
-              <p style="color: #ccc; font-size: 14px; margin: 0;">📍 ${gymsText}</p>
-              <button class="btn-primary" style="padding: 10px; margin-top: 15px;">リクエスト</button>
+              <p style="color: #ccc; font-size: 14px; margin: 0; line-height: 1.5;">📍 ${gymsText}<br>💪 ${partsText}</p>
             </div>
           `;
         });
