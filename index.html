@@ -29,12 +29,9 @@
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
     .modal-content { background-color: #161616; border: 1px solid #333; padding: 20px; border-radius: 12px; width: 80%; max-width: 350px; }
 
-    /* フレンドリスト・アイコン */
+    /* フレンド・チャット用 */
     .list-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
-    .avatar-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #333; }
     .avatar-small { width: 40px; height: 40px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; object-fit: cover; }
-
-    /* チャット画面用 */
     .chat-bubble { max-width: 75%; padding: 12px 16px; border-radius: 20px; margin-bottom: 10px; font-size: 14px; line-height: 1.5; display: inline-block; word-wrap: break-word; }
     .chat-me { background-color: #ffffff; color: #000000; border-bottom-right-radius: 4px; }
     .chat-friend { background-color: #333333; color: #ffffff; border-bottom-left-radius: 4px; }
@@ -72,20 +69,44 @@
 
     <!-- 1. さがす画面（タイムライン） -->
     <div id="screen-search" class="screen">
+      <!-- 🔍 絞り込みフィルター -->
+      <div style="background-color: #161616; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+        <div class="section-title" style="margin-bottom: 10px;">🔍 条件で絞り込む</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <input type="date" id="filter-date" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
+          <select id="filter-area" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
+            <option value="">全てのエリア</option>
+            <option value="千代田区">千代田区</option><option value="中央区">中央区</option><option value="港区">港区</option>
+            <option value="新宿区">新宿区</option><option value="文京区">文京区</option><option value="台東区">台東区</option>
+            <option value="墨田区">墨田区</option><option value="江東区">江東区</option><option value="品川区">品川区</option>
+            <option value="目黒区">目黒区</option><option value="大田区">大田区</option><option value="世田谷区">世田谷区</option>
+            <option value="渋谷区">渋谷区</option><option value="中野区">中野区</option><option value="杉並区">杉並区</option>
+            <option value="豊島区">豊島区</option><option value="北区">北区</option><option value="荒川区">荒川区</option>
+            <option value="板橋区">板橋区</option><option value="練馬区">練馬区</option><option value="足立区">足立区</option>
+            <option value="葛飾区">葛飾区</option><option value="江戸川区">江戸川区</option><option value="都下・その他">都下・その他</option>
+          </select>
+          <select id="filter-part" class="input-field" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;">
+            <option value="">全ての部位</option>
+            <option value="すべて">すべて</option><option value="胸">胸</option><option value="背中">背中</option>
+            <option value="脚">脚</option><option value="肩">肩</option><option value="腕">腕</option>
+          </select>
+          <button class="btn-primary" style="margin:0; width: calc(50% - 4px); padding: 10px; font-size: 13px;" onclick="applyFilter()">検索</button>
+        </div>
+      </div>
+
       <div id="posts-container"><p style="color: #888; text-align: center;">募集データを読み込み中...</p></div>
     </div>
 
     <!-- 2. 募集する画面 -->
     <div id="screen-post" class="screen">
-      
       <div style="margin-bottom: 30px;">
         <div class="section-title">📝 募集メッセージ（任意）</div>
-        <textarea id="post-description" class="input-field" placeholder="「脚トレ追い込み合える方募集！」「合トレ初心者ですがお願いします！」など" style="min-height: 60px;"></textarea>
+        <textarea id="post-description" class="input-field" placeholder="「脚トレ追い込み合える方募集！」など" style="min-height: 60px;"></textarea>
       </div>
 
       <!-- 日程の複数選択 -->
       <div style="margin-bottom: 30px;">
-        <div class="section-title">📅 希望日（複数追加できます）</div>
+        <div class="section-title">📅 希望日（複数追加可）</div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
           <input type="date" id="post-date-input" class="input-field" style="margin: 0;">
           <button class="btn-secondary" style="margin: 0; width: 80px;" onclick="addDate()">追加</button>
@@ -93,9 +114,29 @@
         <div id="selected-dates-container"></div>
       </div>
 
-      <!-- ジムの複数選択（プルダウンから） -->
+      <!-- エリアの複数選択 -->
       <div style="margin-bottom: 30px;">
-        <div class="section-title">📍 開催ジム（複数追加できます）</div>
+        <div class="section-title">🏙️ エリア（複数追加可）</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <select id="post-area-input" class="input-field" style="margin: 0;">
+            <option value="">選択してください</option>
+            <option value="千代田区">千代田区</option><option value="中央区">中央区</option><option value="港区">港区</option>
+            <option value="新宿区">新宿区</option><option value="文京区">文京区</option><option value="台東区">台東区</option>
+            <option value="墨田区">墨田区</option><option value="江東区">江東区</option><option value="品川区">品川区</option>
+            <option value="目黒区">目黒区</option><option value="大田区">大田区</option><option value="世田谷区">世田谷区</option>
+            <option value="渋谷区">渋谷区</option><option value="中野区">中野区</option><option value="杉並区">杉並区</option>
+            <option value="豊島区">豊島区</option><option value="北区">北区</option><option value="荒川区">荒川区</option>
+            <option value="板橋区">板橋区</option><option value="練馬区">練馬区</option><option value="足立区">足立区</option>
+            <option value="葛飾区">葛飾区</option><option value="江戸川区">江戸川区</option><option value="都下・その他">都下・その他</option>
+          </select>
+          <button class="btn-secondary" style="margin: 0; width: 80px;" onclick="addPostArea()">追加</button>
+        </div>
+        <div id="selected-areas-container"></div>
+      </div>
+
+      <!-- ジムの複数選択 -->
+      <div style="margin-bottom: 30px;">
+        <div class="section-title">📍 開催ジム（複数追加可）</div>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
           <select id="post-gym-input" class="input-field" style="margin: 0;">
             <option value="">選択してください</option>
@@ -126,6 +167,7 @@
         <div id="selected-gyms-container"></div>
       </div>
       
+      <!-- 部位選択 -->
       <div style="margin-bottom: 30px;">
         <div class="section-title">💪 メイン部位</div>
         <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">すべて</div>
@@ -136,18 +178,16 @@
         <div class="part-btn part-btn-item" onclick="this.classList.toggle('selected')">腕</div>
       </div>
       
-      <button class="btn-primary" onclick="openConfirmModal()">内容を確認する</button>
+      <button class="btn-primary" onclick="openConfirmModal()">内容を確認して公開</button>
     </div>
 
     <!-- 3. フレンド＆メッセージ一覧画面 -->
     <div id="screen-friends" class="screen">
       <div class="section-title">IDでフレンド追加</div>
-      <p style="font-size: 11px; color: #888; margin-top: -5px; line-height: 1.4;">※タイムラインからのフレンド追加は「合トレ完了報告」後のみ可能です。<br>事前に連絡を取りたい場合はIDを検索してください。</p>
       <div style="display: flex; gap: 10px; margin-bottom: 30px;">
         <input type="text" id="search-uid" class="input-field" placeholder="相手のIDを入力" style="margin: 0;">
         <button class="btn-secondary" style="margin: 0; width: 100px;" onclick="searchAndAddFriend()">追加</button>
       </div>
-
       <div class="section-title">フレンド一覧（タップしてチャット）</div>
       <div id="friends-container"><p style="color: #888; font-size: 13px;">まだフレンドがいません。</p></div>
     </div>
@@ -165,56 +205,29 @@
     <!-- 4. マイページ（設定）画面 -->
     <div id="screen-mypage" class="screen">
       <div style="text-align: center; margin-bottom: 20px; position: relative;">
-        <div id="avatar-container" onclick="document.getElementById('profile-image-upload').click()" style="cursor: pointer; display: inline-block; position: relative;">
+        <div id="avatar-container" onclick="document.getElementById('profile-image-upload').click()" style="cursor: pointer; display: inline-block;">
           <div class="avatar-small" style="width: 80px; height: 80px; font-size: 30px; margin: 0 auto;" id="mypage-avatar">U</div>
         </div>
         <input type="file" id="profile-image-upload" accept="image/*" style="display: none;" onchange="previewImage(event)">
-        <!-- 自分のID表示 -->
-        <div style="margin-top: 15px; font-size: 13px; color: #888;">
-          あなたのID: <span id="my-uid-display" style="color: #fff; font-weight: bold; user-select: all;"></span>
-        </div>
+        <div style="margin-top: 15px; font-size: 13px; color: #888;">あなたのID: <span id="my-uid-display" style="color: #fff; font-weight: bold; user-select: all;"></span></div>
       </div>
       
       <div class="section-title">表示名</div>
       <input type="text" id="profile-name" class="input-field" placeholder="名前を入力">
-      
       <div class="section-title">自己紹介</div>
       <textarea id="profile-bio" class="input-field" placeholder="得意な種目や普段のトレーニング内容などを入力"></textarea>
       
       <div class="section-title">筋トレ歴</div>
       <select id="profile-history" class="input-field">
         <option value="">選択してください</option>
-        <option value="1年未満">1年未満</option>
-        <option value="1〜3年">1〜3年</option>
-        <option value="3〜5年">3〜5年</option>
-        <option value="5〜10年">5〜10年</option>
-        <option value="10年以上">10年以上</option>
+        <option value="1年未満">1年未満</option><option value="1〜3年">1〜3年</option><option value="3〜5年">3〜5年</option>
+        <option value="5〜10年">5〜10年</option><option value="10年以上">10年以上</option>
       </select>
-
       <div class="section-title">メインの契約ジム</div>
       <select id="profile-gyms" class="input-field">
         <option value="">選択してください</option>
-        <option value="エニタイムフィットネス">エニタイムフィットネス</option>
-        <option value="FASTGYM24">FASTGYM24</option>
-        <option value="JOYFIT24">JOYFIT24</option>
-        <option value="FiT24">FiT24</option>
-        <option value="FIT PLACE24">FIT PLACE24</option>
-        <option value="FIT365">FIT365</option>
-        <option value="chocoZAP">chocoZAP</option>
-        <option value="LIFE FIT">LIFE FIT</option>
-        <option value="スポーツクラブルネサンス">スポーツクラブルネサンス</option>
-        <option value="コナミスポーツクラブ">コナミスポーツクラブ</option>
-        <option value="セントラルスポーツ">セントラルスポーツ</option>
-        <option value="ティップネス">ティップネス</option>
-        <option value="メガロス">メガロス</option>
-        <option value="ジェクサー">ジェクサー</option>
-        <option value="スポーツクラブNAS">スポーツクラブNAS</option>
-        <option value="Gold's Gym">Gold's Gym</option>
-        <option value="カーブス">カーブス</option>
-        <option value="Bodies">Bodies</option>
-        <option value="FURDI">FURDI</option>
-        <option value="公営ジムメイン">公営ジムメイン</option>
-        <option value="その他">その他</option>
+        <option value="エニタイムフィットネス">エニタイムフィットネス</option><option value="FASTGYM24">FASTGYM24</option>
+        <option value="Gold's Gym">Gold's Gym</option><option value="公営ジムメイン">公営ジムメイン</option><option value="その他">その他</option>
       </select>
 
       <button class="btn-primary" onclick="saveProfile()">プロフィールを保存する</button>
@@ -225,9 +238,9 @@
   <!-- 投稿確認モーダル -->
   <div id="confirm-modal" class="modal-overlay">
     <div class="modal-content">
-      <h3 style="margin-top: 0;">以下の内容で募集しますか？</h3>
+      <h3 style="margin-top: 0;" id="confirm-modal-title">以下の内容で募集しますか？</h3>
       <div id="confirm-content" style="color: #ccc; font-size: 14px; margin-bottom: 20px; line-height: 1.6;"></div>
-      <button class="btn-primary" onclick="submitPost()">募集を確定する</button>
+      <button class="btn-primary" onclick="submitPost()">確定する</button>
       <button class="btn-secondary" onclick="closeConfirmModal()">キャンセル</button>
     </div>
   </div>
@@ -235,20 +248,16 @@
   <!-- 下部タブバー -->
   <div class="tab-bar" id="bottom-tabs" style="display: none;">
     <div class="tab-item active" onclick="switchTab('screen-search', 'JOINT TRAINING')">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      さがす
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>さがす
     </div>
-    <div class="tab-item" onclick="switchTab('screen-post', '募集を作成')">
-      <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-      募集
+    <div class="tab-item" onclick="openPostTabNew()">
+      <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>募集
     </div>
     <div class="tab-item" onclick="switchTab('screen-friends', 'フレンド')">
-      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      チャット
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>チャット
     </div>
     <div class="tab-item" onclick="switchTab('screen-mypage', 'マイページ')">
-      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-      マイページ
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>マイページ
     </div>
   </div>
 
@@ -297,7 +306,7 @@
         document.getElementById('bottom-tabs').style.display = 'flex';
         document.getElementById('my-uid-display').innerText = user.uid;
         switchTab('screen-search', 'JOINT TRAINING');
-        loadPosts();
+        applyFilter(); // 初期表示でフィルタ適用（全件）して読み込み
         loadProfile(user.uid);
         loadFriends();
       } else {
@@ -317,8 +326,7 @@
           const ctx = canvas.getContext('2d');
           const MAX = 200;
           let w = img.width, h = img.height;
-          if (w > h && w > MAX) { h *= MAX / w; w = MAX; } 
-          else if (h > MAX) { w *= MAX / h; h = MAX; }
+          if (w > h && w > MAX) { h *= MAX / w; w = MAX; } else if (h > MAX) { w *= MAX / h; h = MAX; }
           canvas.width = w; canvas.height = h;
           ctx.drawImage(img, 0, 0, w, h);
           currentProfileImage = canvas.toDataURL('image/jpeg', 0.8);
@@ -346,8 +354,7 @@
     }
 
     function saveProfile() {
-      const uid = auth.currentUser.uid;
-      db.collection("users").doc(uid).set({
+      db.collection("users").doc(auth.currentUser.uid).set({
         name: document.getElementById('profile-name').value,
         bio: document.getElementById('profile-bio').value,
         history: document.getElementById('profile-history').value,
@@ -357,54 +364,50 @@
       }, { merge: true }).then(() => alert("保存しました！"));
     }
 
-    // === 募集機能（日程・ジム 複数追加） ===
+    // === 募集作成・編集機能 ===
     let selectedDates = [];
+    let selectedPostAreas = [];
     let selectedPostGyms = [];
+    let editingPostId = null; // 編集時はここにIDが入る
     
-    // 日程追加
-    function addDate() {
-      const dateVal = document.getElementById('post-date-input').value;
-      if(dateVal && !selectedDates.includes(dateVal)) {
-        selectedDates.push(dateVal);
-        renderDates();
-      }
-    }
-    function renderDates() {
-      document.getElementById('selected-dates-container').innerHTML = selectedDates.map(d => `<div class="part-btn selected" onclick="removeDate('${d}')">${d} ✕</div>`).join('');
-    }
-    function removeDate(d) {
-      selectedDates = selectedDates.filter(x => x !== d);
-      renderDates();
+    // 下のタブから「募集」を押したときは新規作成としてリセットする
+    function openPostTabNew() {
+      editingPostId = null;
+      document.getElementById('post-description').value = "";
+      selectedDates = []; renderDates();
+      selectedPostAreas = []; renderPostAreas();
+      selectedPostGyms = []; renderPostGyms();
+      document.querySelectorAll('.part-btn-item').forEach(el => el.classList.remove('selected'));
+      switchTab('screen-post', '募集を作成');
     }
 
-    // ジム追加
-    function addPostGym() {
-      const gymVal = document.getElementById('post-gym-input').value;
-      if(gymVal && !selectedPostGyms.includes(gymVal)) {
-        selectedPostGyms.push(gymVal);
-        renderPostGyms();
-      }
-    }
-    function renderPostGyms() {
-      document.getElementById('selected-gyms-container').innerHTML = selectedPostGyms.map(g => `<div class="part-btn selected" onclick="removePostGym('${g}')">${g} ✕</div>`).join('');
-    }
-    function removePostGym(g) {
-      selectedPostGyms = selectedPostGyms.filter(x => x !== g);
-      renderPostGyms();
-    }
+    // 追加・削除UIロジック
+    function addDate() { const v = document.getElementById('post-date-input').value; if(v && !selectedDates.includes(v)) { selectedDates.push(v); renderDates(); } }
+    function renderDates() { document.getElementById('selected-dates-container').innerHTML = selectedDates.map(d => `<div class="part-btn selected" onclick="removeDate('${d}')">${d} ✕</div>`).join(''); }
+    function removeDate(d) { selectedDates = selectedDates.filter(x => x !== d); renderDates(); }
+
+    function addPostArea() { const v = document.getElementById('post-area-input').value; if(v && !selectedPostAreas.includes(v)) { selectedPostAreas.push(v); renderPostAreas(); } }
+    function renderPostAreas() { document.getElementById('selected-areas-container').innerHTML = selectedPostAreas.map(a => `<div class="part-btn selected" onclick="removePostArea('${a}')">${a} ✕</div>`).join(''); }
+    function removePostArea(a) { selectedPostAreas = selectedPostAreas.filter(x => x !== a); renderPostAreas(); }
+
+    function addPostGym() { const v = document.getElementById('post-gym-input').value; if(v && !selectedPostGyms.includes(v)) { selectedPostGyms.push(v); renderPostGyms(); } }
+    function renderPostGyms() { document.getElementById('selected-gyms-container').innerHTML = selectedPostGyms.map(g => `<div class="part-btn selected" onclick="removePostGym('${g}')">${g} ✕</div>`).join(''); }
+    function removePostGym(g) { selectedPostGyms = selectedPostGyms.filter(x => x !== g); renderPostGyms(); }
 
     function openConfirmModal() {
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
       const desc = document.getElementById('post-description').value;
 
-      if (selectedPostGyms.length === 0 || parts.length === 0 || selectedDates.length === 0) {
-        return alert("希望日・ジム・部位をそれぞれ1つ以上選択してください。");
+      if (selectedDates.length === 0 || parts.length === 0 || (selectedPostAreas.length === 0 && selectedPostGyms.length === 0)) {
+        return alert("希望日・場所(エリアかジム)・部位をそれぞれ1つ以上選択してください。");
       }
 
+      document.getElementById('confirm-modal-title').innerText = editingPostId ? "この内容で更新しますか？" : "以下の内容で募集しますか？";
       document.getElementById('confirm-content').innerHTML = `
         <strong>📝 メッセージ:</strong><br>${desc ? desc : 'なし'}<br><br>
         <strong>📅 日程:</strong><br>${selectedDates.join(', ')}<br><br>
-        <strong>📍 場所:</strong><br>${selectedPostGyms.join(', ')}<br><br>
+        <strong>🏙️ エリア:</strong><br>${selectedPostAreas.length > 0 ? selectedPostAreas.join(', ') : '指定なし'}<br><br>
+        <strong>📍 ジム:</strong><br>${selectedPostGyms.length > 0 ? selectedPostGyms.join(', ') : '指定なし'}<br><br>
         <strong>💪 部位:</strong><br>${parts.join(', ')}
       `;
       document.getElementById('confirm-modal').style.display = 'flex';
@@ -412,6 +415,7 @@
 
     function closeConfirmModal() { document.getElementById('confirm-modal').style.display = 'none'; }
 
+    // 新規作成 or 編集の保存処理
     function submitPost() {
       const user = auth.currentUser;
       const parts = Array.from(document.querySelectorAll('.part-btn-item.selected')).map(el => el.innerText);
@@ -422,54 +426,118 @@
         const photoURL = doc.exists ? doc.data().photoURL : null;
         const bio = doc.exists ? doc.data().bio : "";
         
-        db.collection("posts").add({
+        const postData = {
           uid: user.uid,
           hostName: hostName,
           hostPhoto: photoURL,
           hostBio: bio,
           description: desc,
           dates: selectedDates,
+          areas: selectedPostAreas,
           gyms: selectedPostGyms,
           parts: parts,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          closeConfirmModal();
-          alert("募集を公開しました！");
-          // 入力リセット
-          selectedDates = []; renderDates();
-          selectedPostGyms = []; renderPostGyms();
-          document.getElementById('post-description').value = "";
-          document.querySelectorAll('#screen-post .selected').forEach(el => el.classList.remove('selected'));
-          switchTab('screen-search', 'JOINT TRAINING');
-        });
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (editingPostId) {
+          // 編集モードの場合（Update）
+          db.collection("posts").doc(editingPostId).update(postData).then(() => {
+            closeConfirmModal();
+            alert("募集内容を更新しました！");
+            openPostTabNew(); // リセットして閉じる
+            switchTab('screen-search', 'JOINT TRAINING');
+          });
+        } else {
+          // 新規作成の場合（Add）
+          postData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+          db.collection("posts").add(postData).then(() => {
+            closeConfirmModal();
+            alert("募集を公開しました！");
+            openPostTabNew();
+            switchTab('screen-search', 'JOINT TRAINING');
+          });
+        }
       });
     }
 
-    // === タイムライン表示 ===
+    // 自分の投稿を編集モードで開く
+    function editMyPost(postId) {
+      db.collection("posts").doc(postId).get().then(doc => {
+        const post = doc.data();
+        editingPostId = postId;
+        document.getElementById('post-description').value = post.description || "";
+        
+        selectedDates = post.dates || []; renderDates();
+        selectedPostAreas = post.areas || []; renderPostAreas();
+        selectedPostGyms = post.gyms || []; renderPostGyms();
+        
+        document.querySelectorAll('.part-btn-item').forEach(el => el.classList.remove('selected'));
+        if(post.parts) {
+          document.querySelectorAll('.part-btn-item').forEach(el => {
+            if(post.parts.includes(el.innerText)) el.classList.add('selected');
+          });
+        }
+        
+        // タブの表示状態を切り替える
+        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-item')[1].classList.add('active'); // 「募集」タブを光らせる
+        
+        switchTab('screen-post', '募集を編集');
+      });
+    }
+
+    // 自分の投稿を削除する
+    function deleteMyPost(postId) {
+      if(confirm("本当にこの募集を削除しますか？")) {
+        db.collection("posts").doc(postId).delete().then(() => alert("削除しました。"));
+      }
+    }
+
+    // === タイムラインとフィルター検索 ===
+    let currentFilters = { date: "", area: "", part: "" };
+
+    function applyFilter() {
+      currentFilters.date = document.getElementById('filter-date').value;
+      currentFilters.area = document.getElementById('filter-area').value;
+      currentFilters.part = document.getElementById('filter-part').value;
+      loadPosts();
+    }
+
     function loadPosts() {
       db.collection("posts").orderBy("createdAt", "desc").onSnapshot(snap => {
         const container = document.getElementById('posts-container');
         container.innerHTML = ""; 
-        if(snap.empty) return container.innerHTML = "<p style='color:#888; text-align:center;'>募集がありません。</p>";
+        let visibleCount = 0;
         
         snap.forEach(doc => {
           const post = doc.data();
-          const datesText = post.dates ? post.dates.join(", ") : "";
-          const gymsText = post.gyms ? post.gyms.join(", ") : "";
-          const partsText = post.parts ? post.parts.join("・") : "";
+          const pId = doc.id;
           
-          // 写真を目立たせるレイアウト
+          // --- フィルターの判定 ---
+          if (currentFilters.date && (!post.dates || !post.dates.includes(currentFilters.date))) return; // 条件不一致はスキップ
+          if (currentFilters.area && (!post.areas || !post.areas.includes(currentFilters.area))) return;
+          if (currentFilters.part && (!post.parts || (!post.parts.includes(currentFilters.part) && !post.parts.includes("すべて")))) return;
+
+          visibleCount++;
+          
+          const datesText = post.dates && post.dates.length > 0 ? post.dates.join(", ") : "未定";
+          const areasText = post.areas && post.areas.length > 0 ? post.areas.join(", ") : "指定なし";
+          const gymsText = post.gyms && post.gyms.length > 0 ? post.gyms.join(", ") : "指定なし";
+          const partsText = post.parts && post.parts.length > 0 ? post.parts.join("・") : "未定";
+          
           const avatarHtml = post.hostPhoto 
             ? `<img src="${post.hostPhoto}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #555; margin-right: 15px;">` 
             : `<div style="width: 50px; height: 50px; border-radius: 50%; background-color: #333; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; font-size: 20px;">${post.hostName.charAt(0)}</div>`;
           
-          // 募集メッセージと自己紹介
           const descHtml = post.description ? `<div style="background: #222; padding: 12px; border-radius: 8px; font-size: 13px; margin: 15px 0; line-height: 1.5;">${post.description}</div>` : '';
           const bioHtml = post.hostBio ? `<div style="color: #aaa; font-size: 11px; margin-top: 4px; line-height: 1.3;">${post.hostBio}</div>` : '';
 
-          // 自分の投稿か、他人の投稿かでボタンを変える
+          // 自分の投稿なら「編集・削除」、他人の投稿なら「合トレ完了報告」
           let actionBtn = post.uid === auth.currentUser.uid 
-            ? `<div style="text-align:right; color:#888; font-size:12px; margin-top:15px;">自分の募集</div>`
+            ? `<div style="display: flex; gap: 10px; margin-top: 15px;">
+                 <button class="btn-secondary" style="flex: 1; padding: 10px; margin: 0; font-size: 13px;" onclick="editMyPost('${pId}')">✏️ 編集</button>
+                 <button class="btn-secondary" style="flex: 1; padding: 10px; margin: 0; font-size: 13px; border-color: #e74c3c; color: #e74c3c;" onclick="deleteMyPost('${pId}')">🗑 削除</button>
+               </div>`
             : `<button class="btn-secondary" style="border-color: #fff; padding: 12px; margin-top: 15px; font-size:13px;" onclick="reportCompletion('${post.uid}', '${post.hostName}')">✅ 合トレ完了を報告してフレンド追加</button>`;
 
           container.innerHTML += `
@@ -484,6 +552,7 @@
               ${descHtml}
               <div style="color: #ccc; font-size: 13px; margin-top: 15px; line-height: 1.8;">
                 <div style="display:flex; margin-bottom: 4px;"><span style="width:25px;">📅</span> <span style="flex:1;">${datesText}</span></div>
+                <div style="display:flex; margin-bottom: 4px;"><span style="width:25px;">🏙️</span> <span style="flex:1;">${areasText}</span></div>
                 <div style="display:flex; margin-bottom: 4px;"><span style="width:25px;">📍</span> <span style="flex:1;">${gymsText}</span></div>
                 <div style="display:flex;"><span style="width:25px;">💪</span> <span style="flex:1;">${partsText}</span></div>
               </div>
@@ -491,20 +560,20 @@
             </div>
           `;
         });
+        
+        if (visibleCount === 0) {
+          container.innerHTML = "<p style='color:#888; text-align:center;'>条件に一致する募集がありません。</p>";
+        }
       });
     }
 
     // === 合トレ完了報告 ＆ フレンド機能 ===
     function reportCompletion(targetUid, targetName) {
-      if(confirm(`${targetName}さんとの合トレ完了を報告しますか？\n\n※完了報告を行うと、相手がフレンドに追加され、メッセージ機能が解放されます。`)) {
+      if(confirm(`${targetName}さんとの合トレ完了を報告しますか？\n\n※報告を行うと相手がフレンドに追加され、メッセージ機能が解放されます。`)) {
         addFriend(targetUid);
       }
     }
-
-    function searchAndAddFriend() {
-      const targetUid = document.getElementById('search-uid').value.trim();
-      addFriend(targetUid);
-    }
+    function searchAndAddFriend() { addFriend(document.getElementById('search-uid').value.trim()); }
 
     function addFriend(targetUid) {
       const myUid = auth.currentUser.uid;
@@ -589,14 +658,11 @@
       if(!currentChatId) return;
       const text = document.getElementById('chat-text').value.trim();
       if(!text) return;
-
       db.collection("chats").doc(currentChatId).collection("messages").add({
         sender: auth.currentUser.uid,
         text: text,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        document.getElementById('chat-text').value = "";
-      });
+      }).then(() => { document.getElementById('chat-text').value = ""; });
     }
   </script>
 </body>
