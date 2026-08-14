@@ -171,11 +171,11 @@
       <div style="display: flex; gap: 10px;">
         <div style="flex: 1;">
           <div class="section-title">生年月日</div>
-          <input type="date" id="profile-birthdate" class="input-field" style="margin-bottom: 15px;">
+          <input type="date" id="profile-birthdate" class="input-field" style="margin-bottom: 10px;">
         </div>
         <div style="flex: 1;">
           <div class="section-title">性別</div>
-          <select id="profile-gender" class="input-field" style="margin-bottom: 15px;">
+          <select id="profile-gender" class="input-field" style="margin-bottom: 10px;">
             <option value="">選択してください</option>
             <option value="男性">男性</option>
             <option value="女性">女性</option>
@@ -335,7 +335,7 @@
     const ADMIN_UID = "FG4kOkTEfqMZ4C9wKyINk0L7UfI3"; // オーナー様のID
 
     const areaList = ["千代田区","中央区","港区","新宿区","文京区","台東区","墨田区","江東区","品川区","目黒区","大田区","世田谷区","渋谷区","中野区","杉並区","豊島区","北区","荒川区","板橋区","練馬区","足立区","葛飾区","江戸川区","都下・その他"];
-    const gymList = ["エニタイムフィットネス","FASTGYM24","JOYFIT24","FiT24","FIT PLACE24","FIT365","chocoZAP","LIFE FIT","スポーツクラブルネサンス","コナミスポーツクラブ","セントラルスポーツ","ティップネス","メガロス","ジェクサー","スポーツクラブNAS","Gold's Gym","カーブス","Bodies","FURDI","公営ジムメイン","その他"];
+    const gymList = ["エニタイムフィットネス","FASTGYM24","JOYFIT24","FiT24","FIT PLACE24","FIT365","chocoZAP","LIFE FIT","スポーツクラブルネサンス","コナミスポーツクラブ","セントラルスポーツ","ティップネス","メガロス","ジェクサー","スポーツクラブNAS","Gold's Gym","カーブス","Bodies","FURDI","公営ジム","その他"];
     
     window.onload = function() {
       const areaHtml = areaList.map(a => `<option value="${a}">${a}</option>`).join('');
